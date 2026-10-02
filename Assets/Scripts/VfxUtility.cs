@@ -38,6 +38,70 @@ namespace MiaShooter
             SpawnTimedPointLight("Explosion Light", position, color, 8f, 9f, 0.16f);
         }
 
+        public static void SpawnGrenadeExplosion(Vector3 position)
+        {
+            SpawnBurst("Grenade Explosion Core", position, Vector3.up, new Color(1f, 0.3f, 0.035f), 150, 1f, 12f, 0.48f, true);
+            SpawnBurst("Grenade Explosion Sparks", position, Vector3.up, new Color(1f, 0.82f, 0.2f), 90, 0.75f, 16f, 0.11f, true);
+            SpawnBurst("Grenade Explosion Smoke", position, Vector3.up, new Color(0.2f, 0.22f, 0.25f), 65, 2f, 4.5f, 0.9f, true);
+            SpawnTimedPointLight("Grenade Explosion Light", position, new Color(1f, 0.25f, 0.035f), 18f, 18f, 0.3f);
+            SpawnShockwave(position);
+        }
+
+        public static void SpawnSmokeCloud(Vector3 position)
+        {
+            GameObject effect = new GameObject("Smoke Grenade Cloud");
+            effect.transform.position = position + Vector3.up * 0.25f;
+
+            ParticleSystem particles = effect.AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = particles.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(5f, 7f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.45f, 1.3f);
+            main.startSize = new ParticleSystem.MinMaxCurve(1.8f, 3.4f);
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(0.52f, 0.58f, 0.62f, 0.78f),
+                new Color(0.12f, 0.16f, 0.2f, 0.7f));
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.stopAction = ParticleSystemStopAction.Destroy;
+
+            ParticleSystem.EmissionModule emission = particles.emission;
+            emission.enabled = false;
+
+            ParticleSystem.ShapeModule shape = particles.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.65f;
+
+            ParticleSystem.NoiseModule noise = particles.noise;
+            noise.enabled = true;
+            noise.strength = 0.65f;
+            noise.frequency = 0.35f;
+            noise.scrollSpeed = 0.2f;
+
+            ParticleSystem.VelocityOverLifetimeModule velocity = particles.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.y = 0.35f;
+
+            ParticleSystemRenderer renderer = particles.GetComponent<ParticleSystemRenderer>();
+            renderer.material = CreateTransparentParticleMaterial(new Color(0.38f, 0.43f, 0.47f, 0.75f));
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+
+            particles.Emit(120);
+            particles.Play();
+        }
+
+        private static void SpawnShockwave(Vector3 position)
+        {
+            GameObject effect = new GameObject("Grenade Shockwave");
+            effect.transform.position = position + Vector3.up * 0.06f;
+            LineRenderer line = effect.AddComponent<LineRenderer>();
+            line.useWorldSpace = false;
+            line.loop = true;
+            line.positionCount = 64;
+            line.material = CreateAdditiveMaterial(new Color(1f, 0.58f, 0.12f));
+            effect.AddComponent<ShockwaveEffect>().Initialize(line, 9f, 0.48f);
+        }
+
         public static void SpawnReloadPulse(Vector3 position)
         {
             Color color = new Color(0.08f, 0.85f, 1f);
@@ -139,6 +203,15 @@ namespace MiaShooter
             material.SetFloat("_Glossiness", 0.75f);
             return material;
         }
+
+        private static Material CreateTransparentParticleMaterial(Color color)
+        {
+            Shader shader = Shader.Find("Legacy Shaders/Particles/Alpha Blended Premultiply")
+                ?? Shader.Find("Particles/Standard Unlit");
+            Material material = new Material(shader);
+            material.color = color;
+            return material;
+        }
     }
 
     public sealed class TimedDestroy : MonoBehaviour
@@ -149,6 +222,55 @@ namespace MiaShooter
         {
             yield return new WaitForSeconds(Lifetime);
             Destroy(gameObject);
+        }
+    }
+
+    public sealed class ShockwaveEffect : MonoBehaviour
+    {
+        private LineRenderer line;
+        private float maxRadius;
+        private float duration;
+        private float elapsed;
+
+        public void Initialize(LineRenderer targetLine, float radius, float lifetime)
+        {
+            line = targetLine;
+            maxRadius = radius;
+            duration = lifetime;
+            line.startWidth = 0.24f;
+            line.endWidth = 0.24f;
+            UpdateRing(0.35f, 1f);
+        }
+
+        private void Update()
+        {
+            elapsed += Time.deltaTime;
+            float progress = duration > 0f ? Mathf.Clamp01(elapsed / duration) : 1f;
+            UpdateRing(Mathf.Lerp(0.35f, maxRadius, progress), 1f - progress);
+            if (progress >= 1f)
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        private void UpdateRing(float radius, float alpha)
+        {
+            if (line == null)
+            {
+                return;
+            }
+
+            Color color = new Color(1f, 0.55f, 0.12f, alpha);
+            line.startColor = color;
+            line.endColor = color;
+            line.startWidth = Mathf.Lerp(0.24f, 0.035f, 1f - alpha);
+            line.endWidth = line.startWidth;
+
+            for (int i = 0; i < line.positionCount; i++)
+            {
+                float angle = i * Mathf.PI * 2f / line.positionCount;
+                line.SetPosition(i, new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius));
+            }
         }
     }
 }

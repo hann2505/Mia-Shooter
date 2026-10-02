@@ -9,6 +9,7 @@ namespace MiaShooter
         private GUIStyle scoreStyle;
         private GUIStyle ammoStyle;
         private WeaponController weapon;
+        private GrenadeThrower grenadeThrower;
 
         private void OnGUI()
         {
@@ -16,11 +17,11 @@ namespace MiaShooter
             float scale = Mathf.Clamp(Screen.height / 900f, 0.75f, 1.5f);
 
             GUI.color = new Color(0f, 0f, 0f, 0.62f);
-            GUI.Box(new Rect(18f, 18f, 430f * scale, 132f * scale), GUIContent.none);
+            GUI.Box(new Rect(18f, 18f, 500f * scale, 154f * scale), GUIContent.none);
             GUI.color = Color.white;
             GUI.Label(new Rect(34f, 28f, 400f * scale, 32f * scale), "MIA SHOOTER — SOUND & VFX LAB", titleStyle);
-            GUI.Label(new Rect(34f, 62f, 400f * scale, 78f * scale),
-                "WASD: di chuyển   |   SPACE: nhảy   |   Chuột: nhìn\nChuột trái: bắn   |   R: nạp đạn   |   ESC: mở con trỏ", bodyStyle);
+            GUI.Label(new Rect(34f, 62f, 470f * scale, 98f * scale),
+                "WASD: di chuyển   |   SPACE: nhảy   |   Chuột: nhìn\nChuột trái: bắn / ném   |   R: nạp đạn\nG: cầm lựu đạn nổ   |   H: cầm bom khói   |   ESC: mở con trỏ", bodyStyle);
 
             DemoGameManager manager = DemoGameManager.Instance;
             string score = manager == null
@@ -33,7 +34,17 @@ namespace MiaShooter
                 weapon = FindFirstObjectByType<WeaponController>();
             }
 
-            if (weapon != null)
+            if (grenadeThrower == null)
+            {
+                grenadeThrower = FindFirstObjectByType<GrenadeThrower>();
+            }
+
+            if (grenadeThrower != null && grenadeThrower.IsGrenadeEquipped)
+            {
+                GUI.Label(new Rect(Screen.width - 430f * scale, Screen.height - 72f * scale, 405f * scale, 46f * scale),
+                    $"{grenadeThrower.SelectedGrenadeName}  —  CLICK TO THROW", ammoStyle);
+            }
+            else if (weapon != null)
             {
                 string ammo = weapon.IsReloading
                     ? "RELOADING..."

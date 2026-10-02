@@ -1209,8 +1209,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc472f0bc851c4f31b218d3c763848ef, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   maxHealth: 2
   scoreValue: 100
   respawnDelay: 2.5
@@ -2610,6 +2610,7 @@ GameObject:
   - component: {fileID: 507753381}
   - component: {fileID: 507753380}
   - component: {fileID: 507753379}
+  - component: {fileID: 507753377}
   m_Layer: 0
   m_Name: PLAYER
   m_TagString: Untagged
@@ -2617,6 +2618,28 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &507753377
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 507753378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bd7e6a682a37c4bf7590c2e371d806b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  throwCamera: {fileID: 2007751967}
+  cameraShake: {fileID: 2007751964}
+  fragmentationClip: {fileID: 8300000, guid: 1bde7ebd449a4f63a6e9db13cab1a047, type: 3}
+  smokeClip: {fileID: 8300000, guid: 95f0424b3c994d54980f3d543086a256, type: 3}
+  throwAnimation: {fileID: 0}
+  fragmentationKey: 103
+  smokeKey: 104
+  throwSpeed: 11
+  upwardBoost: 2.8
+  throwCooldown: 0.75
 --- !u!114 &507753379
 MonoBehaviour:
   m_ObjectHideFlags: 0

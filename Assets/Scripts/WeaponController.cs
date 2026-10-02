@@ -26,6 +26,7 @@ namespace MiaShooter
         private Vector3 weaponRestPosition;
         private Quaternion weaponRestRotation;
         private Vector3 magazineRestPosition;
+        private GrenadeThrower grenadeThrower;
 
         public int CurrentAmmo => currentAmmo;
         public int MagazineSize => magazineSize;
@@ -56,6 +57,12 @@ namespace MiaShooter
         private void Update()
         {
             if (Cursor.lockState != CursorLockMode.Locked)
+            {
+                return;
+            }
+
+            grenadeThrower ??= GetComponent<GrenadeThrower>();
+            if (grenadeThrower != null && grenadeThrower.BlocksWeaponInput)
             {
                 return;
             }
