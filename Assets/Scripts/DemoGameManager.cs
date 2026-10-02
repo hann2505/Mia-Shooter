@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace MiaShooter
@@ -5,6 +6,7 @@ namespace MiaShooter
     public sealed class DemoGameManager : MonoBehaviour
     {
         public static DemoGameManager Instance { get; private set; }
+        public static event Action TargetDestroyed;
 
         public int Score { get; private set; }
         public int TargetsDestroyed { get; private set; }
@@ -18,6 +20,7 @@ namespace MiaShooter
         {
             Score += scoreValue;
             TargetsDestroyed++;
+            TargetDestroyed?.Invoke();
         }
     }
 }

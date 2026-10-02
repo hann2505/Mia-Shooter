@@ -58,7 +58,7 @@ namespace MiaShooterEditor
             BuildArena(floorMaterial, wallMaterial, darkMaterial, cyanGlow, orangeGlow);
             BuildLighting();
             BuildTargets(cyanMaterial, orangeMaterial, darkMaterial, hit: impact, explosion: explosion);
-            BuildPlayer(gunshot, impact, footstep, reload, land, grenadeExplosion, smokeGrenade, gunSteel, gunPanel, gunCeramic, cyanGlow, orangeGlow);
+            BuildPlayer(gunshot, impact, footstep, reload, land, grenadeExplosion, smokeGrenade, gunSteel, gunPanel, gunCeramic, cyanGlow, orangeGlow, darkMaterial);
             BuildGameSystems(ambience);
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -107,6 +107,13 @@ namespace MiaShooterEditor
             if (blaster == null || blaster.GetComponentsInChildren<Renderer>().Length < 25 || blaster.transform.Find("Ion Core") == null)
             {
                 throw new InvalidOperationException("The detailed blaster model is missing or incomplete.");
+            }
+
+            if (blaster.transform.Find("Laser Monitor Mount") == null
+                || blaster.transform.Find("Laser Monitor Mount/Laser Gauge Fill") == null
+                || blaster.transform.Find("Laser Monitor Mount/Laser Monitor Readout") == null)
+            {
+                throw new InvalidOperationException("The blaster laser energy progress display is missing or incomplete.");
             }
 
             foreach (string audioPath in RequiredAudioPaths)
@@ -234,7 +241,8 @@ namespace MiaShooterEditor
             Material gunPanel,
             Material gunCeramic,
             Material cyanGlow,
-            Material orangeGlow)
+            Material orangeGlow,
+            Material darkMaterial)
         {
             GameObject player = new GameObject("PLAYER");
             player.transform.position = new Vector3(0f, 1.1f, -7f);
@@ -268,6 +276,46 @@ namespace MiaShooterEditor
             CreateGunCube("Top Spine", new Vector3(0f, 0.185f, -0.04f), new Vector3(0.16f, 0.055f, 0.55f), Quaternion.identity, gunPanel, gun.transform);
             CreateGunCube("Rear Sight", new Vector3(0f, 0.25f, -0.22f), new Vector3(0.19f, 0.11f, 0.055f), Quaternion.identity, gunCeramic, gun.transform);
             CreateGunCube("Front Holo Sight", new Vector3(0f, 0.245f, 0.32f), new Vector3(0.075f, 0.115f, 0.045f), Quaternion.identity, cyanGlow, gun.transform);
+
+            // --- Laser Energy Progress Monitor (Tactical OLED & 5-Segment HUD on Gun Body) ---
+            GameObject monitorMount = new GameObject("Laser Monitor Mount");
+            monitorMount.transform.SetParent(gun.transform, false);
+            monitorMount.transform.localPosition = new Vector3(-0.14f, 0.22f, -0.14f);
+            monitorMount.transform.localRotation = Quaternion.Euler(14f, -24f, 0f);
+
+            CreateGunCube("Laser Mount Bracket", new Vector3(0.06f, -0.05f, 0.03f), new Vector3(0.08f, 0.04f, 0.06f), Quaternion.identity, gunSteel, monitorMount.transform);
+            CreateGunCube("Laser Monitor Casing", Vector3.zero, new Vector3(0.23f, 0.15f, 0.03f), Quaternion.identity, gunPanel, monitorMount.transform);
+            CreateGunCube("Laser Monitor Screen", new Vector3(0f, 0f, -0.016f), new Vector3(0.21f, 0.13f, 0.005f), Quaternion.identity, darkMaterial, monitorMount.transform);
+
+            GameObject readoutObj = new GameObject("Laser Monitor Readout");
+            readoutObj.transform.SetParent(monitorMount.transform, false);
+            readoutObj.transform.localPosition = new Vector3(0f, 0.04f, -0.022f);
+            TextMesh readoutText = readoutObj.AddComponent<TextMesh>();
+            readoutText.text = "LASER  0%";
+            readoutText.anchor = TextAnchor.MiddleCenter;
+            readoutText.alignment = TextAlignment.Center;
+            readoutText.fontSize = 58;
+            readoutText.characterSize = 0.0022f;
+            readoutText.fontStyle = FontStyle.Bold;
+            readoutText.color = new Color(0.15f, 0.95f, 1f);
+
+            GameObject segmentsRoot = new GameObject("Laser Segments Root");
+            segmentsRoot.transform.SetParent(monitorMount.transform, false);
+            segmentsRoot.transform.localPosition = new Vector3(0f, -0.008f, -0.022f);
+            for (int i = 0; i < 5; i++)
+            {
+                CreateGunCube($"Laser Segment {i + 1}", new Vector3(-0.072f + i * 0.036f, 0f, 0f), new Vector3(0.028f, 0.032f, 0.008f), Quaternion.identity, darkMaterial, segmentsRoot.transform);
+            }
+
+            CreateGunCube("Laser Gauge Trough", new Vector3(0f, -0.046f, -0.020f), new Vector3(0.184f, 0.018f, 0.006f), Quaternion.identity, darkMaterial, monitorMount.transform);
+            CreateGunCube("Laser Gauge Fill", new Vector3(-0.088f, -0.046f, -0.024f), new Vector3(0.001f, 0.012f, 0.006f), Quaternion.identity, cyanGlow, monitorMount.transform);
+
+            // --- Top Energy Rail Conduit ---
+            GameObject topRail = new GameObject("Top Energy Rail");
+            topRail.transform.SetParent(gun.transform, false);
+            topRail.transform.localPosition = new Vector3(0f, 0.225f, 0.04f);
+            CreateGunCube("Top Rail Trough", Vector3.zero, new Vector3(0.08f, 0.02f, 0.38f), Quaternion.identity, gunPanel, topRail.transform);
+            CreateGunCube("Top Rail Fill", new Vector3(0f, 0.011f, -0.14f), new Vector3(0.055f, 0.012f, 0.001f), Quaternion.identity, cyanGlow, topRail.transform);
 
             CreateGunSphere("Ion Core", new Vector3(0f, 0.055f, 0.22f), new Vector3(0.23f, 0.23f, 0.29f), cyanGlow, gun.transform);
             CreateGunCylinder("Core Collar Rear", new Vector3(0f, 0.055f, 0.08f), new Vector3(0.2f, 0.035f, 0.2f), gunPanel, gun.transform);
@@ -358,7 +406,7 @@ namespace MiaShooterEditor
             GameObject title = new GameObject("Arena Title");
             title.transform.SetParent(parent);
             title.transform.position = new Vector3(0f, 7.1f, 28.75f);
-            title.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+            title.transform.rotation = Quaternion.identity;
             TextMesh text = title.AddComponent<TextMesh>();
             text.text = "SOUND + VFX LAB";
             text.anchor = TextAnchor.MiddleCenter;
