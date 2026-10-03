@@ -28,6 +28,11 @@ namespace MiaShooterEditor
         [MenuItem("Tools/Mia Shooter/Build Sound & VFX Demo")]
         public static void BuildDemoScene()
         {
+            if (EditorApplication.isPlaying)
+            {
+                EditorApplication.isPlaying = false;
+            }
+
             EnsureFolder("Assets/Scenes");
             EnsureFolder("Assets/Materials");
 
@@ -47,11 +52,14 @@ namespace MiaShooterEditor
             Material cyanMaterial = CreateMaterial("TargetCyan", new Color(0.05f, 0.65f, 0.85f), 0.7f, 0.8f);
             Material orangeMaterial = CreateMaterial("TargetOrange", new Color(1f, 0.3f, 0.06f), 0.65f, 0.75f);
             Material darkMaterial = CreateMaterial("DarkMetal", new Color(0.035f, 0.045f, 0.055f), 0.8f, 0.8f);
-            Material gunSteel = CreateMaterial("GunSteel", new Color(0.16f, 0.2f, 0.24f), 0.9f, 0.82f);
-            Material gunPanel = CreateMaterial("GunPanel", new Color(0.025f, 0.035f, 0.045f), 0.7f, 0.55f);
-            Material gunCeramic = CreateMaterial("GunCeramic", new Color(0.62f, 0.72f, 0.78f), 0.72f, 0.9f);
+            Material gunSteel = CreateMaterial("GunSteel", new Color(0.12f, 0.15f, 0.18f), 0.95f, 0.88f);
+            Material gunPanel = CreateMaterial("GunPanel", new Color(0.035f, 0.042f, 0.05f), 0.55f, 0.45f);
+            Material gunCeramic = CreateMaterial("GunCeramic", new Color(0.72f, 0.78f, 0.84f), 0.68f, 0.9f);
             Material cyanGlow = CreateEmissiveMaterial("CyanGlow", new Color(0.04f, 0.7f, 1f), 3.5f);
-            Material orangeGlow = CreateEmissiveMaterial("OrangeGlow", new Color(1f, 0.25f, 0.04f), 3f);
+            Material orangeGlow = CreateEmissiveMaterial("OrangeGlow", new Color(1f, 0.38f, 0.04f), 3.5f);
+            Material hotRedGlow = CreateEmissiveMaterial("HotRedGlow", new Color(1f, 0.14f, 0.03f), 3.6f);
+            Material hotGoldGlow = CreateEmissiveMaterial("HotGoldGlow", new Color(1f, 0.82f, 0.15f), 3.2f);
+            Material opticGlass = CreateMaterial("OpticGlass", new Color(0.08f, 0.16f, 0.2f), 0.95f, 0.95f);
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "SoundVfxDemo";
@@ -60,7 +68,7 @@ namespace MiaShooterEditor
             BuildArena(floorMaterial, wallMaterial, darkMaterial, cyanGlow, orangeGlow);
             BuildLighting();
             BuildTargets(cyanMaterial, orangeMaterial, darkMaterial, hit: impact, explosion: explosion);
-            BuildPlayer(gunshot, impact, footstep, reload, land, grenadeExplosion, smokeGrenade, laser, gunSteel, gunPanel, gunCeramic, cyanGlow, orangeGlow, darkMaterial);
+            BuildPlayer(gunshot, impact, footstep, reload, land, grenadeExplosion, smokeGrenade, laser, gunSteel, gunPanel, gunCeramic, cyanGlow, orangeGlow, hotRedGlow, hotGoldGlow, opticGlass, darkMaterial);
             BuildGameSystems(ambience);
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -269,6 +277,9 @@ namespace MiaShooterEditor
             Material gunCeramic,
             Material cyanGlow,
             Material orangeGlow,
+            Material hotRedGlow,
+            Material hotGoldGlow,
+            Material opticGlass,
             Material darkMaterial)
         {
             GameObject player = new GameObject("PLAYER");
@@ -288,116 +299,125 @@ namespace MiaShooterEditor
             cameraObject.AddComponent<AudioListener>();
             CameraShake shake = cameraObject.AddComponent<CameraShake>();
 
+            // --- Modern Lowered Gun Transform (Sits low-ready on lower-right, handle hidden off-screen, barrel aligned straight forward) ---
             GameObject gun = new GameObject("Demo Blaster");
             gun.transform.SetParent(cameraObject.transform, false);
-            gun.transform.localPosition = new Vector3(0.3f, -0.25f, 0.95f);
-            gun.transform.localRotation = Quaternion.Euler(1f, -8f, 0f);
-            gun.transform.localScale = Vector3.one * 0.76f;
+            gun.transform.localPosition = new Vector3(0.24f, -0.42f, 0.92f);
+            gun.transform.localRotation = Quaternion.Euler(-0.95f, -0.57f, 0f);
+            gun.transform.localScale = Vector3.one * 0.72f;
 
-            CreateGunCube("Upper Ceramic Shell", new Vector3(0f, 0.07f, -0.08f), new Vector3(0.36f, 0.16f, 0.58f), Quaternion.identity, gunCeramic, gun.transform);
-            CreateGunCube("Lower Receiver", new Vector3(0f, -0.055f, 0.01f), new Vector3(0.3f, 0.17f, 0.52f), Quaternion.identity, gunSteel, gun.transform);
-            CreateGunCube("Rear Power Housing", new Vector3(0f, 0.035f, -0.39f), new Vector3(0.3f, 0.18f, 0.18f), Quaternion.identity, gunSteel, gun.transform);
-            CreateGunCube("Rear Charge Strip", new Vector3(0f, 0.035f, -0.49f), new Vector3(0.2f, 0.075f, 0.025f), Quaternion.identity, cyanGlow, gun.transform);
-            CreateGunCube("Left Swept Armor", new Vector3(-0.205f, 0.015f, -0.03f), new Vector3(0.075f, 0.21f, 0.43f), Quaternion.Euler(0f, -5f, 13f), gunSteel, gun.transform);
-            CreateGunCube("Right Swept Armor", new Vector3(0.205f, 0.015f, -0.03f), new Vector3(0.075f, 0.21f, 0.43f), Quaternion.Euler(0f, 5f, -13f), gunSteel, gun.transform);
-            CreateGunCube("Top Spine", new Vector3(0f, 0.185f, -0.04f), new Vector3(0.16f, 0.055f, 0.55f), Quaternion.identity, gunPanel, gun.transform);
-            CreateGunCube("Rear Sight", new Vector3(0f, 0.25f, -0.22f), new Vector3(0.19f, 0.11f, 0.055f), Quaternion.identity, gunCeramic, gun.transform);
-            CreateGunCube("Front Holo Sight", new Vector3(0f, 0.245f, 0.32f), new Vector3(0.075f, 0.115f, 0.045f), Quaternion.identity, cyanGlow, gun.transform);
+            // --- Futuristic Modular Chassis & Receiver ---
+            CreateGunCube("Upper Ceramic Shell", new Vector3(0f, 0.05f, -0.06f), new Vector3(0.32f, 0.14f, 0.54f), Quaternion.identity, gunCeramic, gun.transform);
+            CreateGunCube("Lower Receiver", new Vector3(0f, -0.065f, 0.02f), new Vector3(0.28f, 0.15f, 0.50f), Quaternion.identity, gunSteel, gun.transform);
+            CreateGunCube("Receiver Bevel Top", new Vector3(0f, 0.13f, -0.04f), new Vector3(0.22f, 0.06f, 0.48f), Quaternion.identity, gunPanel, gun.transform);
+            CreateGunCube("Rear Power Housing", new Vector3(0f, 0.025f, -0.36f), new Vector3(0.26f, 0.14f, 0.16f), Quaternion.identity, gunSteel, gun.transform);
+            CreateGunCube("Rear Charge Strip", new Vector3(0f, 0.025f, -0.445f), new Vector3(0.14f, 0.035f, 0.012f), Quaternion.identity, orangeGlow, gun.transform);
+            CreateGunCube("Left Swept Armor", new Vector3(-0.185f, 0.01f, -0.02f), new Vector3(0.065f, 0.18f, 0.40f), Quaternion.Euler(0f, -5f, 12f), gunSteel, gun.transform);
+            CreateGunCube("Right Swept Armor", new Vector3(0.185f, 0.01f, -0.02f), new Vector3(0.065f, 0.18f, 0.40f), Quaternion.Euler(0f, 5f, -12f), gunSteel, gun.transform);
 
-            // --- Laser Energy Progress Monitor (Tactical OLED & 5-Segment HUD on Gun Body) ---
+            // --- Modern Reflex Optic Sight ---
+            CreateGunCube("Optic Rail Base", new Vector3(0f, 0.155f, -0.06f), new Vector3(0.09f, 0.025f, 0.32f), Quaternion.identity, gunSteel, gun.transform);
+            CreateGunCube("Holo Sight Hood Left", new Vector3(-0.048f, 0.205f, -0.06f), new Vector3(0.012f, 0.085f, 0.14f), Quaternion.identity, gunPanel, gun.transform);
+            CreateGunCube("Holo Sight Hood Right", new Vector3(0.048f, 0.205f, -0.06f), new Vector3(0.012f, 0.085f, 0.14f), Quaternion.identity, gunPanel, gun.transform);
+            CreateGunCube("Holo Sight Hood Top", new Vector3(0f, 0.245f, -0.06f), new Vector3(0.108f, 0.012f, 0.14f), Quaternion.identity, gunPanel, gun.transform);
+            CreateGunCube("Holo Lens Window", new Vector3(0f, 0.205f, -0.06f), new Vector3(0.082f, 0.07f, 0.008f), Quaternion.identity, opticGlass, gun.transform);
+            CreateGunCube("Front Holo Sight", new Vector3(0f, 0.205f, -0.055f), new Vector3(0.016f, 0.016f, 0.004f), Quaternion.identity, hotRedGlow, gun.transform);
+            CreateGunCube("Rear Sight", new Vector3(0f, 0.185f, -0.22f), new Vector3(0.08f, 0.045f, 0.035f), Quaternion.identity, gunSteel, gun.transform);
+
+            // --- Laser Energy Progress Monitor (Tactical OLED & 5-Segment HUD on Upper-Left Corner) ---
             GameObject monitorMount = new GameObject("Laser Monitor Mount");
             monitorMount.transform.SetParent(gun.transform, false);
-            monitorMount.transform.localPosition = new Vector3(-0.14f, 0.22f, -0.14f);
-            monitorMount.transform.localRotation = Quaternion.Euler(14f, -24f, 0f);
+            monitorMount.transform.localPosition = new Vector3(-0.165f, 0.155f, -0.04f);
+            monitorMount.transform.localRotation = Quaternion.Euler(18f, -30f, 2f);
 
-            CreateGunCube("Laser Mount Bracket", new Vector3(0.06f, -0.05f, 0.03f), new Vector3(0.08f, 0.04f, 0.06f), Quaternion.identity, gunSteel, monitorMount.transform);
-            CreateGunCube("Laser Monitor Casing", Vector3.zero, new Vector3(0.23f, 0.15f, 0.03f), Quaternion.identity, gunPanel, monitorMount.transform);
-            CreateGunCube("Laser Monitor Screen", new Vector3(0f, 0f, -0.016f), new Vector3(0.21f, 0.13f, 0.005f), Quaternion.identity, darkMaterial, monitorMount.transform);
+            CreateGunCube("Laser Mount Bracket", new Vector3(0.05f, -0.035f, 0.025f), new Vector3(0.065f, 0.03f, 0.05f), Quaternion.identity, gunSteel, monitorMount.transform);
+            CreateGunCube("Laser Monitor Casing", Vector3.zero, new Vector3(0.21f, 0.135f, 0.025f), Quaternion.identity, gunPanel, monitorMount.transform);
+            CreateGunCube("Laser Monitor Screen", new Vector3(0f, 0f, -0.015f), new Vector3(0.19f, 0.118f, 0.004f), Quaternion.identity, darkMaterial, monitorMount.transform);
 
             GameObject readoutObj = new GameObject("Laser Monitor Readout");
             readoutObj.transform.SetParent(monitorMount.transform, false);
-            readoutObj.transform.localPosition = new Vector3(0f, 0.04f, -0.022f);
+            readoutObj.transform.localPosition = new Vector3(0f, 0.036f, -0.020f);
             TextMesh readoutText = readoutObj.AddComponent<TextMesh>();
             readoutText.text = "LASER  0%";
             readoutText.anchor = TextAnchor.MiddleCenter;
             readoutText.alignment = TextAlignment.Center;
             readoutText.fontSize = 58;
-            readoutText.characterSize = 0.0022f;
+            readoutText.characterSize = 0.0020f;
             readoutText.fontStyle = FontStyle.Bold;
-            readoutText.color = new Color(0.15f, 0.95f, 1f);
+            readoutText.color = new Color(1f, 0.45f, 0.08f);
 
             GameObject segmentsRoot = new GameObject("Laser Segments Root");
             segmentsRoot.transform.SetParent(monitorMount.transform, false);
-            segmentsRoot.transform.localPosition = new Vector3(0f, -0.008f, -0.022f);
+            segmentsRoot.transform.localPosition = new Vector3(0f, -0.006f, -0.020f);
             for (int i = 0; i < 5; i++)
             {
-                CreateGunCube($"Laser Segment {i + 1}", new Vector3(-0.072f + i * 0.036f, 0f, 0f), new Vector3(0.028f, 0.032f, 0.008f), Quaternion.identity, darkMaterial, segmentsRoot.transform);
+                CreateGunCube($"Laser Segment {i + 1}", new Vector3(-0.064f + i * 0.032f, 0f, 0f), new Vector3(0.024f, 0.028f, 0.006f), Quaternion.identity, darkMaterial, segmentsRoot.transform);
             }
 
-            CreateGunCube("Laser Gauge Trough", new Vector3(0f, -0.046f, -0.020f), new Vector3(0.184f, 0.018f, 0.006f), Quaternion.identity, darkMaterial, monitorMount.transform);
-            CreateGunCube("Laser Gauge Fill", new Vector3(-0.088f, -0.046f, -0.024f), new Vector3(0.001f, 0.012f, 0.006f), Quaternion.identity, cyanGlow, monitorMount.transform);
+            CreateGunCube("Laser Gauge Trough", new Vector3(0f, -0.040f, -0.018f), new Vector3(0.165f, 0.015f, 0.005f), Quaternion.identity, darkMaterial, monitorMount.transform);
+            CreateGunCube("Laser Gauge Fill", new Vector3(-0.078f, -0.040f, -0.022f), new Vector3(0.001f, 0.010f, 0.005f), Quaternion.identity, orangeGlow, monitorMount.transform);
 
             // --- Top Energy Rail Conduit ---
             GameObject topRail = new GameObject("Top Energy Rail");
             topRail.transform.SetParent(gun.transform, false);
-            topRail.transform.localPosition = new Vector3(0f, 0.225f, 0.04f);
-            CreateGunCube("Top Rail Trough", Vector3.zero, new Vector3(0.08f, 0.02f, 0.38f), Quaternion.identity, gunPanel, topRail.transform);
-            CreateGunCube("Top Rail Fill", new Vector3(0f, 0.011f, -0.14f), new Vector3(0.055f, 0.012f, 0.001f), Quaternion.identity, cyanGlow, topRail.transform);
+            topRail.transform.localPosition = new Vector3(0f, 0.185f, 0.06f);
+            CreateGunCube("Top Rail Trough", Vector3.zero, new Vector3(0.075f, 0.02f, 0.36f), Quaternion.identity, gunPanel, topRail.transform);
+            CreateGunCube("Top Rail Fill", new Vector3(0f, 0.011f, -0.135f), new Vector3(0.05f, 0.012f, 0.001f), Quaternion.identity, orangeGlow, topRail.transform);
 
-            CreateGunSphere("Ion Core", new Vector3(0f, 0.055f, 0.22f), new Vector3(0.23f, 0.23f, 0.29f), cyanGlow, gun.transform);
-            CreateGunCylinder("Core Collar Rear", new Vector3(0f, 0.055f, 0.08f), new Vector3(0.2f, 0.035f, 0.2f), gunPanel, gun.transform);
-            CreateGunCylinder("Core Collar Front", new Vector3(0f, 0.055f, 0.37f), new Vector3(0.2f, 0.035f, 0.2f), gunCeramic, gun.transform);
-            CreateGunCylinder("Plasma Barrel", new Vector3(0f, 0.055f, 0.58f), new Vector3(0.09f, 0.25f, 0.09f), cyanGlow, gun.transform);
-            CreateGunCylinder("Barrel Sleeve", new Vector3(0f, 0.055f, 0.61f), new Vector3(0.135f, 0.21f, 0.135f), gunPanel, gun.transform);
+            // --- Core & Plasma Energy Conduit ---
+            CreateGunSphere("Ion Core", new Vector3(0f, 0.045f, 0.22f), new Vector3(0.20f, 0.20f, 0.26f), hotRedGlow, gun.transform);
+            CreateGunCylinder("Core Collar Rear", new Vector3(0f, 0.045f, 0.08f), new Vector3(0.18f, 0.03f, 0.18f), gunPanel, gun.transform);
+            CreateGunCylinder("Core Collar Front", new Vector3(0f, 0.045f, 0.35f), new Vector3(0.18f, 0.03f, 0.18f), gunCeramic, gun.transform);
+            CreateGunCylinder("Plasma Barrel", new Vector3(0f, 0.045f, 0.56f), new Vector3(0.085f, 0.24f, 0.085f), orangeGlow, gun.transform);
+            CreateGunCylinder("Barrel Sleeve", new Vector3(0f, 0.045f, 0.58f), new Vector3(0.125f, 0.20f, 0.125f), gunPanel, gun.transform);
 
-            for (int i = 0; i < 3; i++)
-            {
-                CreateGunCylinder($"Energy Coil {i + 1}", new Vector3(0f, 0.055f, 0.48f + i * 0.14f),
-                    new Vector3(0.165f, 0.018f, 0.165f), i == 1 ? orangeGlow : cyanGlow, gun.transform);
-            }
+            CreateGunCylinder("Energy Coil 1", new Vector3(0f, 0.045f, 0.46f), new Vector3(0.155f, 0.018f, 0.155f), hotRedGlow, gun.transform);
+            CreateGunCylinder("Energy Coil 2", new Vector3(0f, 0.045f, 0.58f), new Vector3(0.155f, 0.018f, 0.155f), orangeGlow, gun.transform);
+            CreateGunCylinder("Energy Coil 3", new Vector3(0f, 0.045f, 0.70f), new Vector3(0.155f, 0.018f, 0.155f), hotGoldGlow, gun.transform);
 
-            CreateGunCylinder("Muzzle Hub", new Vector3(0f, 0.055f, 0.82f), new Vector3(0.18f, 0.11f, 0.18f), gunSteel, gun.transform);
-            CreateGunCylinder("Muzzle Halo", new Vector3(0f, 0.055f, 0.92f), new Vector3(0.2f, 0.026f, 0.2f), cyanGlow, gun.transform);
-            CreateGunCube("Muzzle Prong Top", new Vector3(0f, 0.19f, 0.92f), new Vector3(0.075f, 0.075f, 0.28f), Quaternion.Euler(-7f, 0f, 0f), gunCeramic, gun.transform);
-            CreateGunCube("Muzzle Prong Bottom", new Vector3(0f, -0.08f, 0.92f), new Vector3(0.075f, 0.075f, 0.28f), Quaternion.Euler(7f, 0f, 0f), gunPanel, gun.transform);
-            CreateGunCube("Muzzle Prong Left", new Vector3(-0.145f, 0.055f, 0.92f), new Vector3(0.075f, 0.075f, 0.28f), Quaternion.Euler(0f, 7f, 0f), gunSteel, gun.transform);
-            CreateGunCube("Muzzle Prong Right", new Vector3(0.145f, 0.055f, 0.92f), new Vector3(0.075f, 0.075f, 0.28f), Quaternion.Euler(0f, -7f, 0f), gunSteel, gun.transform);
+            // --- Angular Compensator / Muzzle Assembly ---
+            CreateGunCylinder("Muzzle Hub", new Vector3(0f, 0.045f, 0.80f), new Vector3(0.165f, 0.10f, 0.165f), gunSteel, gun.transform);
+            CreateGunCylinder("Muzzle Halo", new Vector3(0f, 0.045f, 0.89f), new Vector3(0.185f, 0.024f, 0.185f), orangeGlow, gun.transform);
+            CreateGunCube("Muzzle Prong Top", new Vector3(0f, 0.165f, 0.89f), new Vector3(0.065f, 0.065f, 0.26f), Quaternion.Euler(-6f, 0f, 0f), gunCeramic, gun.transform);
+            CreateGunCube("Muzzle Prong Bottom", new Vector3(0f, -0.075f, 0.89f), new Vector3(0.065f, 0.065f, 0.26f), Quaternion.Euler(6f, 0f, 0f), gunPanel, gun.transform);
+            CreateGunCube("Muzzle Prong Left", new Vector3(-0.13f, 0.045f, 0.89f), new Vector3(0.065f, 0.065f, 0.26f), Quaternion.Euler(0f, 6f, 0f), gunSteel, gun.transform);
+            CreateGunCube("Muzzle Prong Right", new Vector3(0.13f, 0.045f, 0.89f), new Vector3(0.065f, 0.065f, 0.26f), Quaternion.Euler(0f, -6f, 0f), gunSteel, gun.transform);
 
             for (int side = -1; side <= 1; side += 2)
             {
                 for (int i = 0; i < 3; i++)
                 {
                     CreateGunCube($"Vent {(side < 0 ? "L" : "R")} {i + 1}",
-                        new Vector3(side * 0.246f, 0.04f, -0.2f + i * 0.12f),
-                        new Vector3(0.025f, 0.07f, 0.075f), Quaternion.Euler(0f, 0f, side * 8f), orangeGlow, gun.transform);
+                        new Vector3(side * 0.222f, 0.035f, -0.18f + i * 0.11f),
+                        new Vector3(0.022f, 0.06f, 0.065f), Quaternion.Euler(0f, 0f, side * 8f), orangeGlow, gun.transform);
                 }
             }
 
-            CreateGunCube("Grip Frame", new Vector3(0f, -0.29f, -0.2f), new Vector3(0.22f, 0.46f, 0.22f), Quaternion.Euler(-14f, 0f, 0f), gunPanel, gun.transform);
-            CreateGunCube("Grip Backstrap", new Vector3(0f, -0.31f, -0.285f), new Vector3(0.16f, 0.38f, 0.065f), Quaternion.Euler(-14f, 0f, 0f), gunCeramic, gun.transform);
-            CreateGunCube("Trigger", new Vector3(0f, -0.15f, -0.015f), new Vector3(0.045f, 0.15f, 0.045f), Quaternion.Euler(-20f, 0f, 0f), orangeGlow, gun.transform);
+            CreateGunCube("Grip Frame", new Vector3(0f, -0.20f, -0.16f), new Vector3(0.18f, 0.14f, 0.18f), Quaternion.Euler(-14f, 0f, 0f), gunPanel, gun.transform);
+            CreateGunCube("Grip Backstrap", new Vector3(0f, -0.22f, -0.23f), new Vector3(0.13f, 0.12f, 0.05f), Quaternion.Euler(-14f, 0f, 0f), gunCeramic, gun.transform);
+            CreateGunCube("Trigger", new Vector3(0f, -0.12f, -0.01f), new Vector3(0.035f, 0.10f, 0.035f), Quaternion.Euler(-20f, 0f, 0f), orangeGlow, gun.transform);
 
             GameObject coreLightObject = new GameObject("Ion Core Light");
             coreLightObject.transform.SetParent(gun.transform, false);
-            coreLightObject.transform.localPosition = new Vector3(0f, 0.055f, 0.22f);
+            coreLightObject.transform.localPosition = new Vector3(0f, 0.045f, 0.22f);
             Light coreLight = coreLightObject.AddComponent<Light>();
             coreLight.type = LightType.Point;
-            coreLight.color = new Color(0.05f, 0.8f, 1f);
-            coreLight.intensity = 1.8f;
-            coreLight.range = 2.2f;
+            coreLight.color = new Color(1f, 0.36f, 0.05f);
+            coreLight.intensity = 1.9f;
+            coreLight.range = 2.4f;
             coreLight.shadows = LightShadows.None;
 
             GameObject magazine = new GameObject("Magazine");
             magazine.transform.SetParent(gun.transform, false);
-            magazine.transform.localPosition = new Vector3(0f, -0.245f, 0.08f);
-            CreateGunCube("Magazine Neck", new Vector3(0f, 0.11f, 0f), new Vector3(0.2f, 0.16f, 0.21f), Quaternion.Euler(6f, 0f, 0f), gunPanel, magazine.transform);
-            CreateGunCube("Magazine Body", new Vector3(0f, -0.08f, -0.015f), new Vector3(0.25f, 0.34f, 0.25f), Quaternion.Euler(10f, 0f, 0f), gunSteel, magazine.transform);
-            CreateGunCube("Magazine Energy Window", new Vector3(0f, -0.08f, -0.145f), new Vector3(0.145f, 0.22f, 0.035f), Quaternion.Euler(10f, 0f, 0f), cyanGlow, magazine.transform);
-            CreateGunCube("Magazine Base", new Vector3(0f, -0.26f, -0.05f), new Vector3(0.28f, 0.075f, 0.29f), Quaternion.Euler(10f, 0f, 0f), gunCeramic, magazine.transform);
+            magazine.transform.localPosition = new Vector3(0f, -0.18f, 0.07f);
+            CreateGunCube("Magazine Neck", new Vector3(0f, 0.06f, 0f), new Vector3(0.16f, 0.10f, 0.17f), Quaternion.Euler(6f, 0f, 0f), gunPanel, magazine.transform);
+            CreateGunCube("Magazine Body", new Vector3(0f, -0.04f, -0.015f), new Vector3(0.21f, 0.14f, 0.21f), Quaternion.Euler(10f, 0f, 0f), gunSteel, magazine.transform);
+            CreateGunCube("Magazine Energy Window", new Vector3(0f, -0.04f, -0.125f), new Vector3(0.12f, 0.10f, 0.025f), Quaternion.Euler(10f, 0f, 0f), orangeGlow, magazine.transform);
+            CreateGunCube("Magazine Base", new Vector3(0f, -0.12f, -0.035f), new Vector3(0.23f, 0.04f, 0.23f), Quaternion.Euler(10f, 0f, 0f), gunCeramic, magazine.transform);
 
             GameObject muzzleObject = new GameObject("Muzzle");
             muzzleObject.transform.SetParent(gun.transform, false);
-            muzzleObject.transform.localPosition = new Vector3(0f, 0.055f, 1.08f);
+            muzzleObject.transform.localPosition = new Vector3(0f, 0.045f, 1.05f);
 
             AudioSource weaponAudio = player.AddComponent<AudioSource>();
             Configure3dAudio(weaponAudio, 0.65f, 1f, 32f);

@@ -38,6 +38,257 @@ namespace MiaShooter
             SpawnTimedPointLight("Explosion Light", position, color, 8f, 9f, 0.16f);
         }
 
+        public static void SpawnTargetEliminationEffect(Vector3 position, Color primaryColor, Vector3 shotDirection)
+        {
+            SpawnEliminationLight(position, primaryColor);
+            SpawnEliminationCoreFlash(position, primaryColor);
+            SpawnEliminationShockwave(position, primaryColor);
+            SpawnEliminationIonSpire(position, primaryColor);
+            SpawnEliminationSparks(position, primaryColor, shotDirection);
+            SpawnEliminationSmoke(position, primaryColor);
+            SpawnTargetFragments(position, primaryColor, shotDirection);
+        }
+
+        private static void SpawnEliminationLight(Vector3 position, Color color)
+        {
+            GameObject lightObject = new GameObject("Elimination Dynamic Light");
+            lightObject.transform.position = position + Vector3.up * 0.35f;
+            Light light = lightObject.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = Color.Lerp(color, Color.white, 0.65f);
+            light.intensity = 32f;
+            light.range = 18f;
+            light.shadows = LightShadows.None;
+            lightObject.AddComponent<ExplosionDynamicLight>().Initialize(
+                light,
+                32f,
+                0.42f,
+                Color.Lerp(color, Color.white, 0.65f),
+                color);
+        }
+
+        private static void SpawnEliminationCoreFlash(Vector3 position, Color color)
+        {
+            GameObject effect = new GameObject("Elimination Blast Flash Core");
+            effect.transform.position = position + Vector3.up * 0.15f;
+
+            ParticleSystem particles = effect.AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = particles.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.startLifetime = 0.11f;
+            main.startSpeed = 0.4f;
+            main.startSize = 4.8f;
+            main.startColor = Color.white;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.stopAction = ParticleSystemStopAction.Destroy;
+
+            ParticleSystem.EmissionModule emission = particles.emission;
+            emission.enabled = false;
+
+            ParticleSystemRenderer renderer = particles.GetComponent<ParticleSystemRenderer>();
+            renderer.material = CreateAdditiveMaterial(Color.white);
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+
+            particles.Emit(1);
+            particles.Play();
+        }
+
+        private static void SpawnEliminationShockwave(Vector3 position, Color color)
+        {
+            GameObject ringObj = new GameObject("Elimination Plasma Shockwave");
+            ringObj.transform.position = position + Vector3.up * 0.08f;
+            LineRenderer line = ringObj.AddComponent<LineRenderer>();
+            line.useWorldSpace = false;
+            line.loop = true;
+            line.positionCount = 80;
+            Color ringColor = Color.Lerp(color, Color.white, 0.35f);
+            ringColor.a = 1f;
+            line.material = CreateAdditiveMaterial(ringColor);
+            ringObj.AddComponent<ShockwaveRing>().Initialize(line, 5.5f, 0.38f, 0.45f, ringColor);
+        }
+
+        private static void SpawnEliminationIonSpire(Vector3 position, Color color)
+        {
+            GameObject effect = new GameObject("Elimination Ion Spire");
+            effect.transform.position = position + Vector3.up * 0.1f;
+            effect.transform.rotation = Quaternion.Euler(-90f, 0f, 0f);
+
+            ParticleSystem particles = effect.AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = particles.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.55f, 0.85f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(20f, 32f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.35f, 0.75f);
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.stopAction = ParticleSystemStopAction.Destroy;
+
+            ParticleSystem.EmissionModule emission = particles.emission;
+            emission.enabled = false;
+
+            ParticleSystem.ShapeModule shape = particles.shape;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 3.5f;
+            shape.radius = 0.22f;
+
+            ParticleSystem.SizeOverLifetimeModule sol = particles.sizeOverLifetime;
+            sol.enabled = true;
+            AnimationCurve spireCurve = new AnimationCurve();
+            spireCurve.AddKey(0f, 1.4f);
+            spireCurve.AddKey(0.4f, 1.0f);
+            spireCurve.AddKey(1f, 0.15f);
+            sol.size = new ParticleSystem.MinMaxCurve(1f, spireCurve);
+
+            ParticleSystem.ColorOverLifetimeModule col = particles.colorOverLifetime;
+            col.enabled = true;
+            Gradient spireGradient = new Gradient();
+            spireGradient.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(Color.white, 0f),
+                    new GradientColorKey(color, 0.35f),
+                    new GradientColorKey(color * 0.7f, 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(1f, 0f),
+                    new GradientAlphaKey(0.85f, 0.6f),
+                    new GradientAlphaKey(0f, 1f)
+                });
+            col.color = new ParticleSystem.MinMaxGradient(spireGradient);
+
+            ParticleSystemRenderer renderer = particles.GetComponent<ParticleSystemRenderer>();
+            renderer.material = CreateAdditiveMaterial(Color.white);
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+
+            particles.Emit(50);
+            particles.Play();
+        }
+
+        private static void SpawnEliminationSparks(Vector3 position, Color color, Vector3 direction)
+        {
+            GameObject effect = new GameObject("Elimination Plasma Sparks");
+            effect.transform.position = position + Vector3.up * 0.2f;
+
+            ParticleSystem particles = effect.AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = particles.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.6f, 1.2f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(16f, 30f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.12f, 0.24f);
+            main.gravityModifier = 1.35f;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.stopAction = ParticleSystemStopAction.Destroy;
+
+            ParticleSystem.EmissionModule emission = particles.emission;
+            emission.enabled = false;
+
+            ParticleSystem.ShapeModule shape = particles.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.25f;
+
+            ParticleSystem.ColorOverLifetimeModule col = particles.colorOverLifetime;
+            col.enabled = true;
+            Gradient sparkGradient = new Gradient();
+            sparkGradient.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(Color.white, 0f),
+                    new GradientColorKey(color, 0.3f),
+                    new GradientColorKey(color * 0.6f, 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(1f, 0f),
+                    new GradientAlphaKey(0.95f, 0.7f),
+                    new GradientAlphaKey(0f, 1f)
+                });
+            col.color = new ParticleSystem.MinMaxGradient(sparkGradient);
+
+            ParticleSystemRenderer renderer = particles.GetComponent<ParticleSystemRenderer>();
+            renderer.material = CreateAdditiveMaterial(Color.white);
+            renderer.renderMode = ParticleSystemRenderMode.Stretch;
+            renderer.velocityScale = 0.045f;
+            renderer.lengthScale = 2.8f;
+
+            particles.Emit(85);
+            particles.Play();
+        }
+
+        private static void SpawnEliminationSmoke(Vector3 position, Color color)
+        {
+            GameObject effect = new GameObject("Elimination Dissolution Smoke");
+            effect.transform.position = position + Vector3.up * 0.25f;
+
+            ParticleSystem particles = effect.AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = particles.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.8f, 2.8f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(2.5f, 5.5f);
+            main.startSize = new ParticleSystem.MinMaxCurve(1.5f, 2.8f);
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, 360f * Mathf.Deg2Rad);
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.stopAction = ParticleSystemStopAction.Destroy;
+
+            ParticleSystem.EmissionModule emission = particles.emission;
+            emission.enabled = false;
+
+            ParticleSystem.ShapeModule shape = particles.shape;
+            shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = 0.45f;
+
+            ParticleSystem.SizeOverLifetimeModule sol = particles.sizeOverLifetime;
+            sol.enabled = true;
+            AnimationCurve smokeCurve = new AnimationCurve();
+            smokeCurve.AddKey(0f, 0.5f);
+            smokeCurve.AddKey(0.35f, 1.4f);
+            smokeCurve.AddKey(1f, 2.2f);
+            sol.size = new ParticleSystem.MinMaxCurve(1f, smokeCurve);
+
+            ParticleSystem.VelocityOverLifetimeModule vol = particles.velocityOverLifetime;
+            vol.enabled = true;
+            vol.space = ParticleSystemSimulationSpace.World;
+            vol.y = new ParticleSystem.MinMaxCurve(1.4f);
+
+            ParticleSystem.LimitVelocityOverLifetimeModule limit = particles.limitVelocityOverLifetime;
+            limit.enabled = true;
+            limit.dampen = 0.4f;
+            limit.limit = new ParticleSystem.MinMaxCurve(1.2f);
+
+            ParticleSystem.ColorOverLifetimeModule col = particles.colorOverLifetime;
+            col.enabled = true;
+            Color tintedSmoke = Color.Lerp(new Color(0.18f, 0.17f, 0.16f), color, 0.35f);
+            Gradient smokeGradient = new Gradient();
+            smokeGradient.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(color, 0f),
+                    new GradientColorKey(tintedSmoke, 0.4f),
+                    new GradientColorKey(new Color(0.15f, 0.15f, 0.15f), 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(0.85f, 0f),
+                    new GradientAlphaKey(0.60f, 0.45f),
+                    new GradientAlphaKey(0f, 1f)
+                });
+            col.color = new ParticleSystem.MinMaxGradient(smokeGradient);
+
+            ParticleSystem.RotationOverLifetimeModule rol = particles.rotationOverLifetime;
+            rol.enabled = true;
+            rol.z = new ParticleSystem.MinMaxCurve(-0.8f, 0.8f);
+
+            ParticleSystemRenderer renderer = particles.GetComponent<ParticleSystemRenderer>();
+            renderer.material = CreateSmokeMaterial(Color.white);
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+
+            particles.Emit(28);
+            particles.Play();
+        }
+
         public static void SpawnGrenadeExplosion(Vector3 position)
         {
             SpawnExplosionLight(position, 55f, 36f, 0.65f);
@@ -830,6 +1081,108 @@ namespace MiaShooter
             }
         }
 
+        public static void SpawnTargetFragments(Vector3 position, Color primaryColor, Vector3 shotDirection)
+        {
+            Vector3 blastDir = shotDirection.sqrMagnitude > 0.01f ? shotDirection.normalized : Vector3.forward;
+
+            // 1. Emissive Outer Target Armor Shards (10 pieces)
+            Material plateMat = CreateEmissiveLitMaterial(primaryColor * 0.75f, primaryColor * 3.2f);
+            for (int i = 0; i < 10; i++)
+            {
+                GameObject shard = GameObject.CreatePrimitive(i % 2 == 0 ? PrimitiveType.Cylinder : PrimitiveType.Cube);
+                shard.name = "Target Armor Shard";
+                shard.transform.position = position + Random.insideUnitSphere * 0.35f;
+                shard.transform.rotation = Random.rotation;
+                shard.transform.localScale = new Vector3(
+                    Random.Range(0.22f, 0.38f),
+                    Random.Range(0.04f, 0.08f),
+                    Random.Range(0.20f, 0.36f));
+
+                Renderer rend = shard.GetComponent<Renderer>();
+                rend.material = plateMat;
+
+                Rigidbody rb = shard.AddComponent<Rigidbody>();
+                rb.mass = Random.Range(0.15f, 0.35f);
+                rb.interpolation = RigidbodyInterpolation.Interpolate;
+                rb.AddExplosionForce(580f, position, 6f, 1.2f, ForceMode.Impulse);
+                rb.AddForce(blastDir * Random.Range(5f, 12f), ForceMode.Impulse);
+                rb.AddTorque(Random.insideUnitSphere * 45f, ForceMode.Impulse);
+
+                TargetShardFader fader = shard.AddComponent<TargetShardFader>();
+                fader.Initialize(plateMat, primaryColor * 3.2f, Random.Range(2.2f, 2.8f));
+            }
+
+            // 2. Dark Carbon Bullseye & Metallic Stem Splinters (8 pieces)
+            Material darkMat = CreateLitMaterial(new Color(0.06f, 0.07f, 0.09f));
+            for (int i = 0; i < 8; i++)
+            {
+                GameObject splinter = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                splinter.name = "Target Core Splinter";
+                splinter.transform.position = position + Random.insideUnitSphere * 0.3f;
+                splinter.transform.rotation = Random.rotation;
+                splinter.transform.localScale = new Vector3(
+                    Random.Range(0.08f, 0.16f),
+                    Random.Range(0.25f, 0.48f),
+                    Random.Range(0.08f, 0.16f));
+
+                splinter.GetComponent<Renderer>().material = darkMat;
+
+                Rigidbody rb = splinter.AddComponent<Rigidbody>();
+                rb.mass = Random.Range(0.2f, 0.4f);
+                rb.interpolation = RigidbodyInterpolation.Interpolate;
+                rb.AddExplosionForce(520f, position, 5f, 1.0f, ForceMode.Impulse);
+                rb.AddForce(blastDir * Random.Range(4f, 10f), ForceMode.Impulse);
+                rb.AddTorque(Random.insideUnitSphere * 35f, ForceMode.Impulse);
+
+                TargetShardFader fader = splinter.AddComponent<TargetShardFader>();
+                fader.Initialize(darkMat, Color.black, Random.Range(2.0f, 2.6f));
+            }
+        }
+
+        private static AudioClip cachedKillChime;
+
+        public static AudioClip GetKillChimeAudio()
+        {
+            if (cachedKillChime != null)
+            {
+                return cachedKillChime;
+            }
+
+            int sampleRate = 44100;
+            float duration = 0.42f;
+            int samples = Mathf.CeilToInt(sampleRate * duration);
+            float[] data = new float[samples];
+
+            float f1 = 1046.50f; // C6
+            float f2 = 1567.98f; // G6
+            float f3 = 2093.00f; // C7
+            float subKick = 85f;
+
+            for (int i = 0; i < samples; i++)
+            {
+                float t = (float)i / sampleRate;
+
+                float attack = Mathf.Clamp01(t / 0.003f);
+                float decayHigh = Mathf.Exp(-t * 9.5f);
+                float decayMid = Mathf.Exp(-t * 6.5f);
+                float decaySub = Mathf.Exp(-t * 35.0f);
+
+                float wave1 = Mathf.Sin(2f * Mathf.PI * f1 * t);
+                float wave2 = Mathf.Sin(2f * Mathf.PI * f2 * t);
+                float wave3 = Mathf.Sin(2f * Mathf.PI * f3 * t);
+                float sub = Mathf.Sin(2f * Mathf.PI * Mathf.Lerp(subKick, 45f, Mathf.Clamp01(t * 15f)) * t);
+
+                float sample = (wave1 * 0.45f + wave2 * 0.35f + wave3 * 0.20f) * decayMid * attack
+                             + sub * 0.4f * decaySub * attack;
+
+                data[i] = Mathf.Clamp(sample * 0.85f, -1f, 1f);
+            }
+
+            cachedKillChime = AudioClip.Create("KillChime", samples, 1, sampleRate, false);
+            cachedKillChime.SetData(data, 0);
+            return cachedKillChime;
+        }
+
         private static void SpawnBurst(
             string name,
             Vector3 position,
@@ -1010,6 +1363,17 @@ namespace MiaShooter
             material.color = color;
             material.SetFloat("_Metallic", 0.65f);
             material.SetFloat("_Glossiness", 0.75f);
+            return material;
+        }
+
+        private static Material CreateEmissiveLitMaterial(Color color, Color emission)
+        {
+            Material material = new Material(Shader.Find("Standard"));
+            material.color = color;
+            material.SetFloat("_Metallic", 0.85f);
+            material.SetFloat("_Glossiness", 0.88f);
+            material.EnableKeyword("_EMISSION");
+            material.SetColor("_EmissionColor", emission);
             return material;
         }
 
@@ -1347,6 +1711,54 @@ namespace MiaShooter
             {
                 float angle = i * Mathf.PI * 2f / line.positionCount;
                 line.SetPosition(i, new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius));
+            }
+        }
+    }
+
+    public sealed class TargetShardFader : MonoBehaviour
+    {
+        private Material material;
+        private Color initialEmission;
+        private float lifetime;
+        private float elapsed;
+        private Vector3 initialScale;
+
+        public void Initialize(Material mat, Color emissive, float duration)
+        {
+            material = mat;
+            initialEmission = emissive;
+            lifetime = duration;
+            initialScale = transform.localScale;
+        }
+
+        public void ManualUpdate(float dt)
+        {
+            elapsed += dt;
+            float progress = lifetime > 0f ? Mathf.Clamp01(elapsed / lifetime) : 1f;
+
+            if (material != null && initialEmission != Color.black)
+            {
+                float emissionFade = Mathf.Pow(1f - progress, 2.2f);
+                material.SetColor("_EmissionColor", initialEmission * emissionFade);
+            }
+
+            if (progress > 0.70f)
+            {
+                float shrinkT = (progress - 0.70f) / 0.30f;
+                transform.localScale = Vector3.Lerp(initialScale, Vector3.zero, shrinkT * shrinkT);
+            }
+
+            if (progress >= 1f)
+            {
+                VfxUtility.SafeDestroy(gameObject);
+            }
+        }
+
+        private void Update()
+        {
+            if (Application.isPlaying)
+            {
+                ManualUpdate(Time.deltaTime);
             }
         }
     }

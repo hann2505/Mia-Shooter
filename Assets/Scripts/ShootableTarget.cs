@@ -16,6 +16,8 @@ namespace MiaShooter
         private int health;
         private bool destroyed;
 
+        private Vector3 lastShotDirection = Vector3.forward;
+
         private void Awake()
         {
             targetRenderers = GetComponentsInChildren<Renderer>();
@@ -36,6 +38,7 @@ namespace MiaShooter
                 return;
             }
 
+            lastShotDirection = shotDirection;
             health -= amount;
             VfxUtility.SpawnImpact(hitPoint, -shotDirection, new Color(0.15f, 0.9f, 1f));
             if (hitClip != null)
@@ -63,13 +66,26 @@ namespace MiaShooter
         private IEnumerator DestroyAndRespawn()
         {
             destroyed = true;
-            DemoGameManager.Instance?.RegisterDestroyedTarget(scoreValue);
-            VfxUtility.SpawnExplosion(transform.position, new Color(0.1f, 0.8f, 1f));
-            VfxUtility.SpawnFragments(transform.position, GetPrimaryColor());
+            Color primaryColor = GetPrimaryColor();
+
+            DemoGameManager.Instance?.RegisterDestroyedTarget(scoreValue, transform.position, primaryColor);
+            VfxUtility.SpawnTargetEliminationEffect(transform.position, primaryColor, lastShotDirection);
+
+            AudioClip killChime = VfxUtility.GetKillChimeAudio();
+            if (killChime != null)
+            {
+                AudioSource.PlayClipAtPoint(killChime, transform.position, 1.0f);
+            }
 
             if (explosionClip != null)
             {
-                AudioSource.PlayClipAtPoint(explosionClip, transform.position, 1f);
+                AudioSource.PlayClipAtPoint(explosionClip, transform.position, 0.75f);
+            }
+
+            CameraShake shake = Camera.main != null ? Camera.main.GetComponent<CameraShake>() : null;
+            if (shake != null)
+            {
+                shake.Play(0.14f, 0.045f);
             }
 
             SetVisible(false);
@@ -105,9 +121,25 @@ namespace MiaShooter
             }
         }
 
-        private Color GetPrimaryColor()
+        public Color GetPrimaryColor()
         {
-            return targetRenderers.Length > 0 ? targetRenderers[0].material.color : Color.cyan;
+            if (targetRenderers != null)
+            {
+                foreach (Renderer r in targetRenderers)
+                {
+                    if (r != null && r.gameObject.name.Contains("Plate"))
+                    {
+                        return r.sharedMaterial != null ? r.sharedMaterial.color : r.material.color;
+                    }
+                }
+
+                if (targetRenderers.Length > 0 && targetRenderers[0] != null)
+                {
+                    return targetRenderers[0].sharedMaterial != null ? targetRenderers[0].sharedMaterial.color : targetRenderers[0].material.color;
+                }
+            }
+
+            return Color.cyan;
         }
     }
 }

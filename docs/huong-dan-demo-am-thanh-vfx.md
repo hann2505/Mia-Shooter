@@ -32,22 +32,29 @@ Bốn âm thanh gameplay cơ bản `gunshot`, `reload`, `footstep` và `land` c�
 
 - Muzzle flash gồm particle và ánh sáng điểm xuất hiện trong thời gian ngắn.
 - Vệt đạn dùng `LineRenderer` và tự biến mất sau mỗi phát bắn.
-- **Tiến trình năng lượng laser trực tiếp trên thân súng**:
-  - Màn hình OLED chiến thuật gắn tại sườn trên bên trái súng (`Euler(14°, -24°, 0°)`), đặt đúng góc nhìn tự nhiên của người chơi.
-  - Hiển thị chỉ số kỹ thuật số thời gian thực (`LASER 0%`, `LASER 40%`, `READY 100%`).
-  - 5 khối pin năng lượng phân đoạn (segmented cells) tự động phát sáng dần theo từng nấc 20% khi phá hủy bia.
-  - Rãnh trượt mức năng lượng liên tục (gauge trough & fill) tăng/giảm mượt mà theo năng lượng tích lũy hoặc tiêu hao.
-  - Ống dẫn năng lượng dọc sống lưng súng (top energy rail conduit) và dải sạc phía sau (rear charge strip) tích điện đồng bộ và phát xung nhịp khi súng đạt 100%.
+- **Mô hình súng viễn tưởng hiện đại hóa & Hạ thấp vị trí (Futuristic Low-Ready Blaster)**:
+  - *Vị trí ngắm hạ thấp & Giấu kín báng cầm*: Thân súng `Demo Blaster` được hạ xuống góc dưới bên phải (`localPosition = (0.24, -0.42, 0.92)`), báng cầm (`Grip Frame`, `Grip Backstrap`) và hộp tiếp đạn (`Magazine`) được thu gọn và giấu hoàn toàn bên dưới mép màn hình (viewport boundary), loại bỏ triệt để hiện tượng tay cầm lơ lửng, tạo tư thế low-ready tự nhiên, giải phóng hoàn toàn khu vực trung tâm và tâm ngắm crosshair.
+  - *Khung thân modular góc cạnh*: Kết hợp lớp giáp ceramic satin chống nhiệt, khung receiver hợp kim titanium stealth siêu bền, cánh giáp hai bên vuốt khí động học kèm 6 khe tản nhiệt mang cá phát sáng nhiệt cam lửa (`#FF600A`).
+  - *Kính ngắm phản xạ viễn tưởng (Reflex Holographic Sight)*: Khung che optic vát cạnh công nghệ cao trên thanh ray Picatinny, thấu kính phủ chống chói (optic glass window) và chấm ngắm holographic laser đỏ rực (`Front Holo Sight`).
+  - *Nòng hãm nảy đa khoang (Angular Muzzle Compensator)*: Cụm họng súng 4 chấu góc cạnh (quad-prong compensator) với vòng hào quang nhiệt và lõi ion plasma bên trong buồng tản nhiệt.
+  - *Dải sạc phía sau tinh tế (Rear Neon Indicator)*: Dải LED neon âm tường phía sau hiển thị trạng thái tích điện phản ứng theo mức năng lượng laser bằng sắc đỏ cam êm dịu, không bị chói lóa.
+- **Tiến trình năng lượng laser góc bên trái thân súng (Tactical Left-Corner OLED Energy Monitor)**:
+  - *Vị trí góc bên trái*: Module màn hình OLED chiến thuật được bố trí tại góc trên bên trái thân súng (`localPosition = (-0.165, 0.155, -0.04)`, `Euler(18°, -30°, 2°)`), nghiêng góc công thái học quay thẳng vào trục nhìn của người chơi.
+  - *Bảng màu nóng rực lửa (Hot Red & Orange Scheme)*:
+    - Màn hình OLED chữ số thời gian thực màu cam neon rực rỡ (`LASER 0%` -> `LASER 100%` / `READY 100%`).
+    - 5 khối pin năng lượng phân đoạn (segmented cells) chuyển màu theo dải quang phổ nhiệt độ cao: Cell 1 (Đỏ thẫm `#FF1804`), Cell 2 (Đỏ cam Vermilion `#FF3004`), Cell 3 (Cam lửa `#FF4804`), Cell 4 (Cam hổ phách `#FF7006`), Cell 5 (Vàng kim Solar Gold `#FF9018`).
+    - Rãnh trượt mức năng lượng liên tục (gauge trough & fill) tăng dần với dải gradient từ đỏ lửa sang cam rực sáng.
+    - Ống dẫn năng lượng dọc sống lưng súng (top energy rail conduit) tích điện bằng luồng plasma đỏ-cam sống động.
 - **Tâm ngắm thông minh viễn tưởng (Sci-Fi Reactive Crosshair)**:
   - Điểm tâm chính xác (precision center dot) kết hợp 4 thanh định hướng có khoảng hở tâm và bóng viền đen chống lóa trên mọi điều kiện ánh sáng.
   - Nhận diện mục tiêu thời gian thực: 4 góc bracket tự động thắt chặt và chuyển sang sắc đỏ cam rực lửa (`#FF5238`) khi lia vào bia địch.
   - Phản hồi trúng đạn (Reactive Hitmarker): dấu chéo chữ X chớp nháy trong 0.18 giây mỗi khi bắn trúng mục tiêu bằng đạn hoặc laser.
-  - Vòng hào quang laser (Laser Aura Reticle): tự động hiển thị 4 điểm kim cương hào quang cùng chỉ báo "⚡ READY" khi nạp đầy, và mở rộng dao động theo luồng plasma khi khai hỏa chuột phải.
+  - Vòng hào quang laser (Laser Aura Reticle): tự động hiển thị 4 điểm kim cương hào quang cùng chỉ báo "⚡ READY" màu cam lửa nóng bỏng khi nạp đầy, và mở rộng dao động theo luồng plasma khi khai hỏa chuột phải.
   - Thích ứng khi cầm lựu đạn: tâm ngắm tự động mở rộng khoảng hở tạo cảm giác ném quăng tự nhiên.
 - **Hệ thống ánh sáng hào quang laser (Volumetric Laser Aura Light)**:
-  - Tia laser đa tầng: gồm chùm tia lõi trắng tinh khiết nhiệt độ cao (`laserBeam`) được bao bọc bởi chùm hào quang ngọc lam rộng gấp 2.8 lần (`laserAuraBeam`) dao động liên tục theo tần số plasma.
-  - Ánh sáng hào quang họng súng (`muzzleAuraLight`): nguồn sáng điểm cường độ cao (4.8f, bán kính 15m) hắt ánh sáng xanh ngọc rực rỡ lên thân súng, các chấu muzzle và sàn arena; khi laser tích đủ 100% ở trạng thái nghỉ, đèn chuyển sang nhịp thở êm dịu báo hiệu sẵn sàng.
-  - Ánh sáng hào quang điểm chạm (`impactAuraLight`): nguồn sáng điểm tại vị trí va chạm (cường độ 4.4f, bán kính 11m) chiếu sáng rực rỡ bề mặt bia/vật cản, kết hợp với các chùm tia lửa plasma nổ liên tục 20 lần/giây.
+  - *Tia laser thẳng tắp theo hướng nòng súng (Coaxial Muzzle-Forward Beam)*: Tia laser khai hỏa dọc thẳng tắp theo đúng trục nòng súng (`Ray(muzzle.position, muzzle.forward)`), loại bỏ hoàn toàn hiện tượng lệch góc hay bắn chéo màn hình. Chùm tia lõi trắng tinh khiết nhiệt độ cao (`laserBeam`) được bao bọc bởi chùm hào quang cam lửa rực cháy rộng gấp 2.8 lần (`laserAuraBeam`) dao động liên tục theo tần số plasma.
+  - Ánh sáng hào quang họng súng (`muzzleAuraLight`): nguồn sáng điểm cường độ cao hắt ánh sáng cam đỏ rực rỡ lên thân súng, các chấu muzzle và sàn arena; khi laser tích đủ 100% ở trạng thái nghỉ, đèn chuyển sang nhịp thở êm dịu báo hiệu sẵn sàng.
+  - Ánh sáng hào quang điểm chạm (`impactAuraLight`): nguồn sáng điểm tại vị trí va chạm chiếu sáng rực rỡ bề mặt bia/vật cản, kết hợp với các chùm tia lửa plasma nổ liên tục 20 lần/giây.
 - Va chạm tạo chùm tia lửa particle tại bề mặt trúng đạn.
 - Bia nổ bằng hai lớp particle, ánh sáng và các mảnh vỡ có Rigidbody.
 - Nhấn `G` hoặc `H` sẽ cất súng và đưa loại bom tương ứng vào tay. Click chuột trái mới chạy animation ném; projectile được thả đúng giữa chuyển động rồi tay thu khỏi khung hình và súng xuất hiện lại.
@@ -88,26 +95,82 @@ Bốn âm thanh gameplay cơ bản `gunshot`, `reload`, `footstep` và `land` c�
 - Súng giật theo mỗi phát bắn; nhấn `R` luôn chạy nạp chiến thuật, kể cả khi băng còn đầy. Súng hạ xuống, hộp tiếp đạn tháo–lắp và phát ra một pulse năng lượng.
 - Mẫu ion blaster gồm vỏ ceramic, receiver kim loại, armor vát, rail, holo sight, grip, trigger, lõi ion hình cầu, ba energy coil, vent hai bên, muzzle bốn chấu, magazine phát sáng và màn hình hiển thị laser OLED.
 - Vật liệu phát sáng, đèn màu và sương mù tạo không khí cho scene 3D.
+- **Hiệu ứng kết liễu mục tiêu điện ảnh đa tầng (AAA Target Elimination VFX & Kill Confirmation)**:
+  - *Ánh sáng chớp nổ bùng cháy (Dynamic Blast Flash Light)*: Đèn điểm cường độ cao (`intensity = 32f`, `range = 18m`) chớp sáng trắng-neon tức thì trong 0.42 giây tại tâm bia, đổi dần sang sắc neon chủ đạo của bia (`TargetCyan` hoặc `TargetOrange`), hắt sáng lên toàn bộ môi trường xung quanh.
+  - *Lõi chớp sáng hủy diệt (White-Hot Annihilation Flash Core)*: Quả cầu chớp sáng cực đại đường kính 4.8m tại tâm chấn trong 0.11s tạo cảm giác bộc phát năng lượng mãnh liệt.
+  - *Sóng xung kích plasma phẳng (Horizontal Plasma Shockwave Ring)*: Vòng sóng plasma phát quang LineRenderer nở rộng tức thì từ tâm ra bán kính 5.5m với độ dày 0.38m thu hẹp dần theo đường cong ease-out trong 0.45s.
+  - *Cột tháp ion phóng thiên (Ascending Ion Spire / Kill Beacon)*: Chùm tia ion thẳng đứng phóng vút lên trời cao 8–10 mét với tốc độ 20–32m/s, tạo cột mốc tiêu diệt nổi bật (kill beacon) có thể quan sát thấy từ khắp mọi góc trong phòng tập.
+  - *Mưa tia lửa plasma phân tán cao tốc (High-Speed Plasma Sparks)*: 85 tia lửa plasma kéo dãn (`stretch lengthScale = 2.8`) bung tỏa theo trọng lực và hướng bắn với vận tốc 16–30m/s.
+  - *Khói phân rã thể tích (Volumetric Dissolution Smoke)*: 28 cụm khói hữu cơ nhuốm ánh sáng neon của bia trôi bồng bềnh lên trên và cuộn xoay nhẹ nhàng trong 2.5 giây.
+  - *Mảnh vỡ giáp phát quang vật lý (Emissive Armor Shards & Metallic Splinters)*: 18 mảnh vỡ vật lý gồm các phiến giáp ngoài phát sáng viền neon rực rỡ (`_EMISSION`) và các thanh kim loại ruột bia văng tung toé theo lực nổ `580f` và xung lực hướng đạn bắn, xoay 3D hỗn loạn, tự động mờ dần độ sáng và thu nhỏ êm ái trước khi biến mất (`TargetShardFader`).
+  - *Âm thanh kết liễu tinh thể thủ tục (Procedural Crystal Kill Chime Audio)*: Tự động tổng hợp xung âm thanh chuông tinh thể 2 hòa âm tần số cao (C6 1046.5Hz + G6 1568Hz) kết hợp sub-kick 85Hz đanh gọn với tốc độ tấn công 3ms, mang lại phản hồi thính giác "Kill Confirmed" cực kỳ đã tai và thỏa mãn.
+  - *Huy hiệu tiêu diệt trên HUD (HUD Kill Confirmation Banner)*: Xuất hiện huy hiệu viễn tưởng công nghệ cao viền cyan và góc tab phong cách sci-fi ngay dưới tâm ngắm hiển thị `✦ TARGET ELIMINATED ✦` kèm điểm số `+100 PTS` và bộ đếm chuỗi hạ gục `COMBO x2!` khi tiêu diệt liên tiếp.
+  - *Tâm ngắm kết liễu 8 cánh (8-Point Expanding Kill Hitmarker)*: Tâm ngắm bùng nổ 8 cánh hình sao đỏ-vàng kim (4 cánh chéo X đỏ rực mở rộng từ 11px ra 22px cùng 4 hạt kim cương vàng kim ở các trục chính) tạo phản hồi trực quan sắc nét khi hạ gục mục tiêu.
+  - *Rung chấn camera vật lý*: Camera rung chấn đanh gọn (`0.14s`, `strength = 0.045f`) khi hạ gục bia tạo cảm giác tác động cơ học chân thực.
 - Bia bị phá hủy sẽ hồi sinh sau 2,5 giây để tiếp tục demo.
+- **Giao diện HUD viễn tưởng công nghệ cao (Next-Gen Sci-Fi Tactical HUD)**:
+  - *Huy hiệu Hologram phân khu tác chiến (Góc trên bên trái)*: Bảng thông tin holographic viền cyan phát quang hiển thị mã hiệu căn cứ tác chiến `✦ MIA // LABS TACTICAL SUITE - FIRING RANGE SIMULATION`.
+  - *Chỉ số điểm số & Nút Cài đặt (Góc trên bên phải)*:
+    - Bảng đếm điểm kỹ thuật số vàng kim rực rỡ (`SCORE: 0100`).
+    - Bộ đếm bia mục tiêu thời gian thực (`TARGETS: 08`).
+    - Nút bấm tương tác chiến thuật `[ ⚙ CÀI ĐẶT / ESC ]` cho phép mở nhanh menu cài đặt bằng chuột.
+  - *Module sinh trắc & Trạng thái cơ động (Góc dưới bên trái)*:
+    - Định danh đặc vụ `OPERATOR // MIA-01`.
+    - Thanh Khiên năng lượng (Shield) 5 phân đoạn xanh cyan phát quang.
+    - Thanh Giáp thân (Armor) 5 phân đoạn xanh ngọc lục bảo.
+    - Dải phím tắt cơ động nhanh: `[W/A/S/D] MOVE   [SPACE] JUMP   [SHIFT] SPRINT`.
+  - *Module vũ khí & Tiến trình laser góc cạnh (Góc dưới bên phải)*:
+    - Nhãn định danh vũ khí chuẩn quân sự: `ION BLASTER // MK-IV` kèm chế độ bắn `FIREMODE: PLASMA / LASER`.
+    - Bộ đếm đạn số lớn `12 / 12` màu trắng-cyan sắc nét.
+    - 12 đèn LED pips viên đạn chiến thuật (Tactical Cartridge Pips): phát sáng cyan rực rỡ khi đạn còn trong băng và tự động mờ tối khi khai hỏa từng viên.
+    - Thanh năng lượng laser (Laser Energy Bar): dải màu nóng từ đỏ lửa sang cam rực sáng hiển thị tỷ lệ sạc phần trăm thời gian thực (`0%` -> `100%`).
+    - Chip thông báo trạng thái khí tài ném: `[Q] HE FRAG: READY` và `[E] SMOKE: READY`.
+- **Hệ thống Menu Cài Đặt tương tác & Đổi phím (Interactive Settings & Keybind Rebinding Modal)**:
+  - *Đóng/mở linh hoạt*: Bấm phím `ESC`, phím `P` hoặc click trực tiếp nút `[ ⚙ CÀI ĐẶT ]` trên góc phải HUD. Khi menu mở, trò chơi tự động khóa di chuyển, dừng xoay camera, nhả con trỏ chuột tự do để thao tác mượt mà.
+  - *Tab Phím điều khiển (Keybinds)*:
+    - Liệt kê toàn bộ các hành động: Di chuyển (Tiến, Lùi, Trái, Phải), Nhảy, Bắn chính, Bắn laser, Nạp đạn, Ném lựu đạn nổ, Ném bom khói.
+    - Hỗ trợ đổi phím tương tác một chạm: bấm vào nút hành động, giao diện chuyển sang nhấp nháy `[ BẤM PHÍM BẤT KỲ... ]`, nhận ngay phím bàn phím hoặc nút chuột bất kỳ (Mouse 0, 1, 2) và tự động lưu bền vững vào `PlayerPrefs`.
+    - Nút Đặt lại mặc định (`⟲ ĐẶT LẠI MẶC ĐỊNH`) khôi phục toàn bộ cấu hình ban đầu ngay tức thì.
+  - *Tab Âm thanh (Audio)*:
+    - 3 thanh trượt điều chỉnh âm lượng độc lập: Âm lượng tổng (Master), Hiệu ứng (SFX), Môi trường (Ambience) từ 0% đến 100%.
+    - Nút kiểm tra âm thanh tức thì: `♫ PHÁT THỬ CHUÔNG TIÊU DIỆT` để nghe thử âm thanh chuông tinh thể kết liễu.
+  - *Tab Gameplay*:
+    - Thanh trượt độ nhạy chuột từ `0.5x` đến `5.0x`.
+    - Hộp chọn bật/tắt rung chấn màn hình (`Screen Shake`).
+    - Thanh trượt độ phóng đại tâm ngắm và tùy chọn ẩn/hiện phím gợi ý trên màn hình.
 
 ## Các script chính
 
-- `FirstPersonController.cs`: di chuyển, nhìn và phát tiếng bước chân.
-- `WeaponController.cs`: raycast bắn súng, băng đạn 12 viên, nạp đạn, recoil, âm thanh, rung camera, muzzle flash, tracer, cơ chế tích sạc laser, điều khiển màn hình năng lượng thân súng, chùm laser aura đa tầng cùng hệ thống đèn chiếu hào quang họng súng và điểm chạm.
-- `DemoHud.cs`: HUD giao diện, thông tin đạn/điểm số, cùng hệ thống tâm ngắm thông minh đa chế độ (precision crosshair, target lock-on, reactive hitmarker, laser aura reticle).
-- `GrenadeThrower.cs`, `GrenadeThrowAnimation.cs` và `GrenadeProjectile.cs`: animation tay ném, tạo projectile theo hướng nhìn, xử lý va chạm, sát thương và vụ nổ.
-- `ShootableTarget.cs`: nhận sát thương, hiệu ứng trúng đạn, nổ và hồi sinh.
-- `VfxUtility.cs`: tạo particle, ánh sáng, tracer và mảnh vỡ tại runtime.
+- `FirstPersonController.cs`: di chuyển, nhìn, phát tiếng bước chân, kết nối với `GameSettings` và xử lý mở/đóng menu cài đặt.
+- `WeaponController.cs`: raycast bắn súng, băng đạn 12 viên, nạp đạn, recoil, âm thanh, rung camera, muzzle flash, tracer, cơ chế tích sạc laser, điều khiển màn hình năng lượng thân súng, chùm laser aura đa tầng cùng hệ thống đèn chiếu hào quang họng súng và điểm chạm, tôn trọng cấu hình phím từ `GameSettings`.
+- `GameSettings.cs`: quản lý tập trung toàn bộ cấu hình trò chơi, lưu trữ `PlayerPrefs`, xử lý đổi phím (key rebinding), âm lượng, độ nhạy chuột và trạng thái modal cài đặt.
+- `DemoHud.cs`: HUD giao diện viễn tưởng thế hệ mới (module súng, đạn pips, thanh năng lượng, sinh trắc học, bảng điểm), hệ thống tâm ngắm thông minh đa chế độ và modal Menu Cài Đặt tương tác 3 tab.
+- `GrenadeThrower.cs`, `GrenadeThrowAnimation.cs` và `GrenadeProjectile.cs`: animation tay ném, tạo projectile theo hướng nhìn, xử lý va chạm, sát thương và vụ nổ, điều khiển bằng phím gán trong `GameSettings`.
+- `ShootableTarget.cs`: nhận sát thương, hiệu ứng trúng đạn, nổ, kích hoạt hiệu ứng kết liễu điện ảnh và hồi sinh.
+- `VfxUtility.cs`: tạo particle, ánh sáng, tracer, vụ nổ, khói thể tích, hiệu ứng kết liễu mục tiêu đa tầng, âm thanh chuông kết liễu thủ tục và mảnh vỡ tại runtime.
 - `SoundVfxDemoBuilder.cs`: dựng lại toàn bộ scene, kiểm tra asset và tự động tạo mô hình súng kèm màn hình hiển thị năng lượng.
 
 ## Gợi ý thuyết trình
 
 1. Đứng xa một bia rồi tiến lại gần để minh họa attenuation của âm thanh 3D.
-2. Trình bày tâm ngắm chính xác với bóng viền tương phản cao, lia tâm qua bia mục tiêu để minh họa tính năng khóa mục tiêu chuyển sang màu đỏ cam.
-3. Bắn vào bia hoặc tường để trình bày tia lửa va chạm, âm thanh hit và hiệu ứng hitmarker chữ X chớp nháy tức thì.
-4. Bắn hết 12 viên hoặc nhấn `R` để trình bày animation, particle và âm thanh nạp đạn.
-5. Bắn hạ 5 bia mục tiêu, hướng sự chú ý vào màn hình OLED chiến thuật trên thân súng: quan sát từng vạch năng lượng sáng lên, rãnh trượt đầy dần và dải năng lượng chuyển sang trạng thái "READY 100%".
-6. Quan sát hiệu ứng ánh sáng hào quang thở nhẹ nhàng ở đầu nòng súng khi laser đã sẵn sàng.
-7. Giữ chuột phải để khai hỏa tia laser: trình bày tia laser kép với chùm hào quang ngọc lam cuồn cuộn, ánh sáng hào quang họng súng chiếu sáng rực rỡ và ánh sáng điểm chạm tại mục tiêu, trong khi màn hình năng lượng trên thân súng giảm dần chân thực.
-8. Nhấn `G`, quan sát nhân vật cầm lựu đạn, click chuột trái để ném và theo dõi sóng xung kích tại điểm nổ.
-9. Nhấn `H`, click chuột trái để ném bom khói và quan sát đám khói lan rộng, tồn tại trong nhiều giây.
+2. Trình bày **Giao diện HUD viễn tưởng thế hệ mới**:
+   - Chỉ vào huy hiệu Hologram chiến thuật ở góc trên bên trái (`✦ MIA // LABS TACTICAL SUITE`).
+   - Giới thiệu module sinh trắc học ở góc dưới bên trái với các thanh Khiên (Shield) và Giáp (Armor) phân đoạn sắc nét.
+   - Giới thiệu module vũ khí ở góc dưới bên phải với bộ đếm đạn số lớn `12 / 12`, 12 đèn LED pips đạn chiến thuật tự động tắt khi bắn, và thanh năng lượng laser dải màu nóng đỏ-cam.
+3. Bấm phím `ESC` hoặc click nút `[ ⚙ CÀI ĐẶT ]` ở góc trên bên phải HUD để mở **Menu Cài Đặt tương tác**:
+   - Trình bày tab **Phím điều khiển (Keybinds)**: click vào một phím (ví dụ: Nạp đạn `R`), nhấn phím mới bất kỳ để minh họa tính năng rebind phím và click `ĐẶT LẠI MẶC ĐỊNH` để khôi phục cấu hình mặc định.
+   - Chuyển sang tab **Âm thanh**: kéo thanh trượt âm lượng và bấm nút `♫ PHÁT THỬ CHUÔNG TIÊU DIỆT` để nghe thử âm thanh kết liễu.
+   - Chuyển sang tab **Gameplay**: trình bày tùy chọn chỉnh độ nhạy chuột và bật/tắt rung chấn màn hình. Bấm `ĐÓNG MENU (ESC)` để trở lại trận đấu.
+4. Trình bày tâm ngắm chính xác với bóng viền tương phản cao, lia tâm qua bia mục tiêu để minh họa tính năng khóa mục tiêu chuyển sang màu đỏ cam.
+5. Bắn vào bia hoặc tường để trình bày tia lửa va chạm, âm thanh hit và hiệu ứng hitmarker chữ X chớp nháy tức thì.
+6. Bắn hạ hoàn toàn bia mục tiêu để trình bày **Hiệu ứng kết liễu điện ảnh (Target Elimination)**:
+   - Chiêm ngưỡng chùm sóng xung kích plasma phẳng bung tỏa cùng cột tháp ion phóng thiên (kill beacon) vút lên trời cao.
+   - Các mảnh giáp phát quang neon rực rỡ và splinters kim loại văng tung toé theo lực nổ vật lý.
+   - Thưởng thức âm thanh chuông tinh thể "Kill Chime" trong trẻo đanh gọn.
+   - Quan sát huy hiệu tiêu diệt `✦ TARGET ELIMINATED ✦` và dấu tâm ngắm kết liễu 8 cánh đỏ-vàng bùng nở trên màn hình HUD.
+7. Bắn hết 12 viên hoặc nhấn `R` để trình bày animation, particle và âm thanh nạp đạn, đồng thời quan sát 12 pips đạn trên HUD tự động nạp sáng lại.
+8. Bắn hạ 5 bia mục tiêu, hướng sự chú ý vào màn hình OLED chiến thuật trên thân súng và thanh năng lượng trên HUD: quan sát từng vạch năng lượng sáng lên, rãnh trượt đầy dần và dải năng lượng chuyển sang trạng thái "READY 100%".
+9. Quan sát hiệu ứng ánh sáng hào quang thở nhẹ nhàng ở đầu nòng súng khi laser đã sẵn sàng.
+10. Giữ chuột phải để khai hỏa tia laser: trình bày tia laser kép với chùm hào quang cam lửa rực cháy dọc thẳng tắp trục nòng súng, ánh sáng hào quang họng súng chiếu sáng rực rỡ và ánh sáng điểm chạm tại mục tiêu, trong khi màn hình năng lượng trên thân súng và thanh HUD giảm dần chân thực.
+11. Nhấn `G` (hoặc phím đã gán), quan sát nhân vật cầm lựu đạn, click chuột trái để ném và theo dõi vụ nổ siêu uy lực cùng cột khói nấm cuồn cuộn.
+12. Nhấn `H` (hoặc phím đã gán), click chuột trái để ném bom khói và quan sát đám khói 4 tầng lan rộng, tồn tại trong nhiều giây.

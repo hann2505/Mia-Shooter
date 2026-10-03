@@ -58,8 +58,20 @@ namespace MiaShooter
         private const float FullGaugeWidth = 0.176f;
         private const float FullRailLength = 0.36f;
         private const float RailZStart = -0.14f;
-        private static readonly Color LaserColor = new Color(0.1f, 0.92f, 1f);
-        private static readonly Color DimSegmentColor = new Color(0.05f, 0.11f, 0.15f);
+        private static readonly Color LaserHotColor = new Color(1f, 0.40f, 0.04f); // Fiery blazing orange
+        private static readonly Color LaserHotRed = new Color(1f, 0.14f, 0.04f);   // Deep fiery crimson red
+        private static readonly Color LaserHotGold = new Color(1f, 0.88f, 0.20f);  // White-hot solar flare
+        private static readonly Color DimSegmentColor = new Color(0.18f, 0.04f, 0.02f); // Dark charred ember
+
+        // 5 progressive hot segment colors (Red -> Vermilion -> Orange -> Amber -> Gold)
+        private static readonly Color[] HotSegmentColors = new Color[5]
+        {
+            new Color(1f, 0.16f, 0.04f), // Cell 1: Deep flame red
+            new Color(1f, 0.30f, 0.04f), // Cell 2: Vermilion red-orange
+            new Color(1f, 0.48f, 0.04f), // Cell 3: Hot blaze orange
+            new Color(1f, 0.70f, 0.06f), // Cell 4: Vivid golden orange
+            new Color(1f, 0.90f, 0.18f)  // Cell 5: Solar gold
+        };
 
         public int CurrentAmmo => currentAmmo;
         public int MagazineSize => magazineSize;
@@ -116,7 +128,7 @@ namespace MiaShooter
 
         private void Update()
         {
-            if (Cursor.lockState != CursorLockMode.Locked)
+            if (Cursor.lockState != CursorLockMode.Locked || GameSettings.IsSettingsOpen)
             {
                 StopLaser();
                 return;
@@ -129,7 +141,7 @@ namespace MiaShooter
                 return;
             }
 
-            if (Input.GetButton("Fire2"))
+            if (GameSettings.IsFire2Held() || Input.GetButton("Fire2"))
             {
                 if (TryFireLaser())
                 {
@@ -145,11 +157,11 @@ namespace MiaShooter
                 }
             }
 
-            if (Input.GetKeyDown(KeyCode.R))
+            if (Input.GetKeyDown(GameSettings.ReloadKey) || Input.GetKeyDown(KeyCode.R))
             {
                 TryReload(true);
             }
-            else if (Input.GetButton("Fire1"))
+            else if (GameSettings.IsFire1Held() || Input.GetButton("Fire1"))
             {
                 TryFire();
             }
@@ -216,7 +228,7 @@ namespace MiaShooter
                 laserAudio.pitch = 1.0f + 0.025f * Mathf.Sin(Time.time * 28f);
             }
 
-            Ray ray = new Ray(aimCamera.transform.position, aimCamera.transform.forward);
+            Ray ray = new Ray(muzzle.position, muzzle.forward);
             Vector3 endPoint = ray.GetPoint(range);
             Vector3 hitNormal = -ray.direction;
             bool hitSomething = false;
@@ -238,7 +250,7 @@ namespace MiaShooter
                     }
                     else
                     {
-                        VfxUtility.SpawnImpact(hit.point, hit.normal, LaserColor);
+                        VfxUtility.SpawnImpact(hit.point, hit.normal, LaserHotColor);
                     }
                 }
             }
@@ -257,7 +269,7 @@ namespace MiaShooter
                 laserAuraBeam.endWidth = laserWidth * 1.6f * auraPulse;
             }
 
-            // Muzzle Aura Light: radiates dynamic cyan light across the blaster and forward environment
+            // Muzzle Aura Light: radiates dynamic hot orange light across the blaster and forward environment
             if (muzzleAuraLight != null)
             {
                 muzzleAuraLight.enabled = true;
@@ -282,7 +294,7 @@ namespace MiaShooter
             if (hitSomething && Time.time >= nextLaserVfxTime)
             {
                 nextLaserVfxTime = Time.time + 0.05f;
-                VfxUtility.SpawnImpact(endPoint, hitNormal, LaserColor);
+                VfxUtility.SpawnImpact(endPoint, hitNormal, LaserHotColor);
             }
 
             laserEnergy = Mathf.Max(0f, laserEnergy - Time.deltaTime / Mathf.Max(0.1f, laserDuration));
@@ -448,7 +460,7 @@ namespace MiaShooter
                 laserReadoutText.fontSize = 58;
                 laserReadoutText.characterSize = 0.0022f;
                 laserReadoutText.fontStyle = FontStyle.Bold;
-                laserReadoutText.color = LaserColor;
+                laserReadoutText.color = LaserHotColor;
 
                 GameObject segmentsRoot = new GameObject("Laser Segments Root");
                 segmentsRoot.transform.SetParent(laserMonitorMount, false);
@@ -460,7 +472,7 @@ namespace MiaShooter
                 }
 
                 CreateGunPart("Laser Gauge Trough", laserMonitorMount, new Vector3(0f, -0.046f, -0.020f), new Vector3(0.184f, 0.018f, 0.006f), new Color(0.03f, 0.04f, 0.05f), false);
-                GameObject gaugeFillObj = CreateGunPart("Laser Gauge Fill", laserMonitorMount, new Vector3(-FullGaugeWidth * 0.5f, -0.046f, -0.024f), new Vector3(0.001f, 0.012f, 0.006f), LaserColor, true);
+                GameObject gaugeFillObj = CreateGunPart("Laser Gauge Fill", laserMonitorMount, new Vector3(-FullGaugeWidth * 0.5f, -0.046f, -0.024f), new Vector3(0.001f, 0.012f, 0.006f), LaserHotRed, true);
                 laserGaugeFill = gaugeFillObj.transform;
                 laserGaugeRenderer = gaugeFillObj.GetComponent<Renderer>();
             }
@@ -477,7 +489,7 @@ namespace MiaShooter
                     topRail = railObj.transform;
                     CreateGunPart("Top Rail Trough", topRail, Vector3.zero, new Vector3(0.08f, 0.02f, 0.38f), new Color(0.025f, 0.035f, 0.045f), false);
                 }
-                GameObject railFillObj = CreateGunPart("Top Rail Fill", topRail, new Vector3(0f, 0.011f, RailZStart), new Vector3(0.055f, 0.012f, 0.001f), LaserColor, true);
+                GameObject railFillObj = CreateGunPart("Top Rail Fill", topRail, new Vector3(0f, 0.011f, RailZStart), new Vector3(0.055f, 0.012f, 0.001f), LaserHotColor, true);
                 topRailFill = railFillObj.transform;
                 topRailRenderer = railFillObj.GetComponent<Renderer>();
             }
@@ -492,7 +504,7 @@ namespace MiaShooter
                 laserBeam.startWidth = laserWidth;
                 laserBeam.endWidth = laserWidth * 0.42f;
                 laserBeam.startColor = Color.white;
-                laserBeam.endColor = new Color(LaserColor.r, LaserColor.g, LaserColor.b, 0.45f);
+                laserBeam.endColor = new Color(LaserHotColor.r, LaserHotColor.g, LaserHotColor.b, 0.55f);
                 laserBeam.material = CreateLaserCoreMaterial();
                 laserBeam.enabled = false;
             }
@@ -506,8 +518,8 @@ namespace MiaShooter
                 laserAuraBeam.positionCount = 2;
                 laserAuraBeam.startWidth = laserWidth * 2.8f;
                 laserAuraBeam.endWidth = laserWidth * 1.6f;
-                laserAuraBeam.startColor = new Color(LaserColor.r, LaserColor.g, LaserColor.b, 0.65f);
-                laserAuraBeam.endColor = new Color(LaserColor.r, LaserColor.g, LaserColor.b, 0.2f);
+                laserAuraBeam.startColor = new Color(1f, 0.22f, 0.04f, 0.75f);
+                laserAuraBeam.endColor = new Color(0.9f, 0.12f, 0.02f, 0.25f);
                 laserAuraBeam.material = CreateLaserAuraMaterial();
                 laserAuraBeam.enabled = false;
             }
@@ -518,7 +530,7 @@ namespace MiaShooter
                 muzzleLightObj.transform.SetParent(transform, false);
                 muzzleAuraLight = muzzleLightObj.AddComponent<Light>();
                 muzzleAuraLight.type = LightType.Point;
-                muzzleAuraLight.color = LaserColor;
+                muzzleAuraLight.color = LaserHotColor;
                 muzzleAuraLight.range = 15f;
                 muzzleAuraLight.intensity = 4.8f;
                 muzzleAuraLight.enabled = false;
@@ -530,7 +542,7 @@ namespace MiaShooter
                 impactLightObj.transform.SetParent(transform, false);
                 impactAuraLight = impactLightObj.AddComponent<Light>();
                 impactAuraLight.type = LightType.Point;
-                impactAuraLight.color = new Color(0.2f, 0.95f, 1f);
+                impactAuraLight.color = LaserHotColor;
                 impactAuraLight.range = 11f;
                 impactAuraLight.intensity = 4.4f;
                 impactAuraLight.enabled = false;
@@ -575,7 +587,7 @@ namespace MiaShooter
         {
             Shader shader = Shader.Find("Particles/Standard Unlit") ?? Shader.Find("Unlit/Color") ?? Shader.Find("Standard");
             Material material = new Material(shader);
-            material.color = new Color(LaserColor.r, LaserColor.g, LaserColor.b, 0.7f);
+            material.color = new Color(LaserHotColor.r, LaserHotColor.g, LaserHotColor.b, 0.75f);
             return material;
         }
 
@@ -590,28 +602,28 @@ namespace MiaShooter
             bool isFull = laserUnlocked && energy >= 0.999f;
             float pulse = isFull ? (0.85f + 0.15f * Mathf.Sin(Time.time * 8.5f)) : 1f;
 
-            // 1. Digital Text Readout
+            // 1. Digital Text Readout in hot colors
             if (laserReadoutText != null)
             {
                 if (isFiringLaser)
                 {
                     laserReadoutText.text = $"LASER {Mathf.CeilToInt(energy * 100f)}%";
-                    laserReadoutText.color = LaserColor;
+                    laserReadoutText.color = LaserHotColor;
                 }
                 else if (isFull)
                 {
                     laserReadoutText.text = "READY 100%";
-                    laserReadoutText.color = Color.Lerp(LaserColor, Color.white, 0.5f * pulse);
+                    laserReadoutText.color = Color.Lerp(LaserHotColor, LaserHotGold, 0.5f + 0.5f * Mathf.Sin(Time.time * 6f));
                 }
                 else
                 {
                     int pct = Mathf.RoundToInt(energy * 100f);
                     laserReadoutText.text = pct > 0 ? $"LASER  {pct}%" : "LASER  0%";
-                    laserReadoutText.color = pct > 0 ? LaserColor : new Color(0.35f, 0.65f, 0.75f);
+                    laserReadoutText.color = pct > 0 ? LaserHotColor : new Color(0.7f, 0.22f, 0.08f);
                 }
             }
 
-            // 2. 5 Segmented Charge Cells
+            // 2. 5 Segmented Hot Energy Battery Cells (Red -> Vermilion -> Orange -> Golden Orange -> Solar Gold)
             for (int i = 0; i < 5; i++)
             {
                 Renderer seg = laserSegments[i];
@@ -621,10 +633,10 @@ namespace MiaShooter
                 bool active = energy >= threshold;
                 if (active)
                 {
-                    Color segColor = isFull ? Color.white : LaserColor;
+                    Color segColor = HotSegmentColors[i];
                     seg.material.color = segColor;
                     seg.material.EnableKeyword("_EMISSION");
-                    seg.material.SetColor("_EmissionColor", segColor * (isFull ? 4f * pulse : 3f));
+                    seg.material.SetColor("_EmissionColor", segColor * (isFull ? 2.6f * pulse : 2.0f));
                 }
                 else
                 {
@@ -634,7 +646,7 @@ namespace MiaShooter
                 }
             }
 
-            // 3. Monitor Continuous Gauge Fill
+            // 3. Monitor Continuous Hot Gauge Fill (Gradient Red to Orange)
             if (laserGaugeFill != null)
             {
                 float visibleWidth = FullGaugeWidth * energy;
@@ -648,12 +660,12 @@ namespace MiaShooter
 
                 if (laserGaugeRenderer != null)
                 {
-                    Color fillColor = isFull ? Color.white : LaserColor;
+                    Color fillColor = Color.Lerp(LaserHotRed, LaserHotColor, energy);
                     laserGaugeRenderer.material.color = fillColor;
                     if (energy > 0.01f)
                     {
                         laserGaugeRenderer.material.EnableKeyword("_EMISSION");
-                        laserGaugeRenderer.material.SetColor("_EmissionColor", fillColor * (isFull ? 3.8f * pulse : 2.6f));
+                        laserGaugeRenderer.material.SetColor("_EmissionColor", fillColor * (isFull ? 2.4f * pulse : 1.8f));
                     }
                     else
                     {
@@ -663,7 +675,7 @@ namespace MiaShooter
                 }
             }
 
-            // 4. Top Rail Conduit Fill
+            // 4. Top Rail Conduit Hot Fill
             if (topRailFill != null)
             {
                 float visibleLength = FullRailLength * energy;
@@ -677,12 +689,12 @@ namespace MiaShooter
 
                 if (topRailRenderer != null)
                 {
-                    Color railColor = isFull ? Color.white : LaserColor;
+                    Color railColor = Color.Lerp(LaserHotRed, LaserHotColor, energy);
                     topRailRenderer.material.color = railColor;
                     if (energy > 0.01f)
                     {
                         topRailRenderer.material.EnableKeyword("_EMISSION");
-                        topRailRenderer.material.SetColor("_EmissionColor", railColor * (isFull ? 3.5f * pulse : 2.4f));
+                        topRailRenderer.material.SetColor("_EmissionColor", railColor * (isFull ? 2.5f * pulse : 1.9f));
                     }
                     else
                     {
@@ -692,22 +704,22 @@ namespace MiaShooter
                 }
             }
 
-            // 5. Rear Charge Strip Reactive Lighting
+            // 5. Rear Charge Strip Hot Reactive Lighting
             if (rearChargeStripRenderer != null)
             {
                 Color stripColor = isFull
-                    ? Color.white
-                    : Color.Lerp(new Color(0.02f, 0.12f, 0.18f), LaserColor, energy);
+                    ? Color.Lerp(LaserHotRed, LaserHotColor, 0.5f + 0.5f * Mathf.Sin(Time.time * 5f))
+                    : Color.Lerp(new Color(0.22f, 0.05f, 0.02f), LaserHotColor, energy);
                 rearChargeStripRenderer.material.color = stripColor;
                 if (energy > 0.05f)
                 {
                     rearChargeStripRenderer.material.EnableKeyword("_EMISSION");
-                    rearChargeStripRenderer.material.SetColor("_EmissionColor", stripColor * (isFull ? 4f * pulse : 1f + 2f * energy));
+                    rearChargeStripRenderer.material.SetColor("_EmissionColor", stripColor * (isFull ? 2.0f * pulse : 0.8f + 1.2f * energy));
                 }
                 else
                 {
                     rearChargeStripRenderer.material.EnableKeyword("_EMISSION");
-                    rearChargeStripRenderer.material.SetColor("_EmissionColor", stripColor * 0.4f);
+                    rearChargeStripRenderer.material.SetColor("_EmissionColor", stripColor * 0.3f);
                 }
             }
 

@@ -56,20 +56,20 @@ namespace MiaShooter
 
         private void Update()
         {
-            if (Cursor.lockState != CursorLockMode.Locked)
+            if (Cursor.lockState != CursorLockMode.Locked || GameSettings.IsSettingsOpen)
             {
                 return;
             }
 
-            if (Input.GetKeyDown(fragmentationKey))
+            if (Input.GetKeyDown(GameSettings.FragGrenadeKey) || Input.GetKeyDown(fragmentationKey))
             {
                 EquipGrenade(GrenadeType.Fragmentation);
             }
-            else if (Input.GetKeyDown(smokeKey))
+            else if (Input.GetKeyDown(GameSettings.SmokeGrenadeKey) || Input.GetKeyDown(smokeKey))
             {
                 EquipGrenade(GrenadeType.Smoke);
             }
-            else if (IsGrenadeEquipped && Input.GetButtonDown("Fire1"))
+            else if (IsGrenadeEquipped && (GameSettings.IsFire1Down() || Input.GetButtonDown("Fire1")))
             {
                 TryThrow();
             }

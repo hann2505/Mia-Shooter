@@ -15,6 +15,11 @@ namespace MiaShooter
 
         public void Play(float duration, float strength)
         {
+            if (!GameSettings.ScreenShakeEnabled)
+            {
+                return;
+            }
+
             if (activeShake != null)
             {
                 StopCoroutine(activeShake);

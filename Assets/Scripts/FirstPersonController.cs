@@ -37,7 +37,19 @@ namespace MiaShooter
         {
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                SetCursorLocked(Cursor.lockState != CursorLockMode.Locked);
+                if (GameSettings.CurrentlyRebindingAction == null)
+                {
+                    GameSettings.IsSettingsOpen = !GameSettings.IsSettingsOpen;
+                    SetCursorLocked(!GameSettings.IsSettingsOpen);
+                }
+            }
+
+            if (!GameSettings.IsSettingsOpen && Cursor.lockState != CursorLockMode.Locked)
+            {
+                if (Input.GetMouseButtonDown(0))
+                {
+                    SetCursorLocked(true);
+                }
             }
 
             Look();
@@ -53,19 +65,36 @@ namespace MiaShooter
 
         private void Look()
         {
-            if (Cursor.lockState != CursorLockMode.Locked || playerCamera == null)
+            if (Cursor.lockState != CursorLockMode.Locked || playerCamera == null || GameSettings.IsSettingsOpen)
             {
                 return;
             }
 
-            transform.Rotate(Vector3.up * (Input.GetAxis("Mouse X") * mouseSensitivity));
-            pitch = Mathf.Clamp(pitch - Input.GetAxis("Mouse Y") * mouseSensitivity, -85f, 85f);
+            float currentSensitivity = mouseSensitivity * (GameSettings.MouseSensitivity / 2f);
+            transform.Rotate(Vector3.up * (Input.GetAxis("Mouse X") * currentSensitivity));
+            pitch = Mathf.Clamp(pitch - Input.GetAxis("Mouse Y") * currentSensitivity, -85f, 85f);
             playerCamera.transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
         }
 
         private void Move()
         {
-            Vector3 input = new Vector3(Input.GetAxisRaw("Horizontal"), 0f, Input.GetAxisRaw("Vertical"));
+            if (GameSettings.IsSettingsOpen)
+            {
+                return;
+            }
+
+            float h = 0f;
+            if (Input.GetKey(GameSettings.MoveLeftKey)) h -= 1f;
+            if (Input.GetKey(GameSettings.MoveRightKey)) h += 1f;
+
+            float v = 0f;
+            if (Input.GetKey(GameSettings.MoveForwardKey)) v += 1f;
+            if (Input.GetKey(GameSettings.MoveBackwardKey)) v -= 1f;
+
+            if (Mathf.Approximately(h, 0f)) h = Input.GetAxisRaw("Horizontal");
+            if (Mathf.Approximately(v, 0f)) v = Input.GetAxisRaw("Vertical");
+
+            Vector3 input = new Vector3(h, 0f, v);
             input = Vector3.ClampMagnitude(input, 1f);
 
             bool groundedBeforeMove = controller.isGrounded;
@@ -74,7 +103,7 @@ namespace MiaShooter
                 verticalVelocity = -2f;
             }
 
-            if (groundedBeforeMove && Input.GetButtonDown("Jump"))
+            if (groundedBeforeMove && (Input.GetKeyDown(GameSettings.JumpKey) || Input.GetButtonDown("Jump")))
             {
                 verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
                 wasAirborne = true;
