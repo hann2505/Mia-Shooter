@@ -52,6 +52,11 @@ namespace MiaShooter
                 }
             }
 
+            if (Input.GetKeyDown(KeyCode.T) && GameSettings.CurrentlyRebindingAction == null && !GameSettings.IsSettingsOpen)
+            {
+                SpatialAudioProbe.Instance?.Toggle();
+            }
+
             Look();
             Move();
         }

@@ -15,18 +15,32 @@ Nếu cần tạo lại scene, chọn menu `Tools > Mia Shooter > Build Sound & 
 
 ## Nội dung đáp ứng yêu cầu
 
-### Hiệu ứng âm thanh
+### Hiệu ứng âm thanh & Không gian hóa 3D chân thực (3D Spatial Audio Architecture)
 
-Bốn âm thanh gameplay cơ bản `gunshot`, `reload`, `footstep` và `land` cùng âm thanh khai hỏa chùm năng lượng `laser` được nạp trực tiếp từ `Assets/Resources/Audio` khi vào Play Mode. Vì vậy Unity luôn dùng bản MP3 hiện tại ngay cả khi Editor vừa khôi phục một scene backup cũ; tham chiếu trong scene chỉ đóng vai trò dự phòng.
+Game ứng dụng hệ thống không gian hóa âm thanh 3D toàn diện (Full 3D Spatial Audio Pipeline), tối ưu cho trải nghiệm tai nghe (Headphones) với khả năng định vị phương vị (Binaural Panning), suy giảm khoảng cách vật lý (Distance Rolloff), phản hồi vang dội kiến trúc (Acoustic Reverb) và hiệu ứng Doppler biến điệu cao độ thời gian thực:
 
-- Tiếng súng được phát từ vị trí người chơi với `AudioSource` có `Spatial Blend`.
-- Âm thanh bắn laser sử dụng file `Assets/Audio/laser.mp3` (`Assets/Resources/Audio/laser.mp3`): tích hợp qua `AudioSource` 2D chuyên dụng chạy lặp (`loop = true`) liên tục trong suốt thời gian giữ chuột phải, tự động biến điệu cao độ (dynamic pitch modulation) dao động nhẹ theo luồng plasma và dừng ngay lập tức khi nhả chuột hoặc cạn kiệt pin năng lượng.
-- Tiếng va chạm và tiếng nổ được phát tại đúng vị trí bia trong không gian 3D.
-- Tiếng bước chân thay đổi nhẹ cao độ để tránh cảm giác lặp máy móc.
-- Tiếng nạp đạn kết hợp âm cơ khí và hai nhịp khóa hộp tiếp đạn.
-- Tiếng súng, nạp đạn, bước chân và laser sử dụng asset MP3; hiệu ứng tiếp đất MP3 chỉ phát sau khi người chơi thực sự rơi đủ nhanh.
-- Âm thanh môi trường chạy lặp để tạo không khí cho phòng tập.
-- Khoảng cách nghe sử dụng `minDistance`, `maxDistance` và logarithmic rolloff.
+- **Binaural Stereo Panning & 100% Spatial Blend**:
+  - Toàn bộ nguồn phát âm thanh trong thế giới (tiếng súng va chạm, bia nổ, máy phát năng lượng, mục tiêu di động, lựu đạn) đều được cấu hình `spatialBlend = 1.0f` (100% 3D World Space), `spread = 0°` giúp tai người nghe nhận biết tức thì hướng nguồn âm (trái, phải, trước, sau).
+- **Đường cong suy giảm âm lượng logarit chuẩn hóa (`SpatialAudioUtility`)**:
+  - Khắc phục giới hạn mặc định của `AudioSource.PlayClipAtPoint` (vốn có `maxDistance = 500m` triệt tiêu cảm giác xa gần trong phòng kín), lớp tiện ích [`SpatialAudioUtility`](file:///Users/nc/Develop/Game/Mia%20Shooter/Assets/Scripts/SpatialAudioUtility.cs) áp dụng đường cong suy giảm Logarithmic tùy chỉnh với cự ly thực tế (`minDistance = 2.0m - 3.5m`, `maxDistance = 25m - 40m`). Người chơi khi di chuyển lại gần hoặc ra xa sẽ cảm nhận sự thay đổi âm lượng rõ rệt.
+- **Vùng vang dội âm học phòng tập (`AudioReverbZone`)**:
+  - Khu vực đấu trường được bao bọc bởi một `AudioReverbZone` kiến trúc phòng kín (Room preset, `minDistance = 6m`, `maxDistance = 50m`), mô phỏng hiện tượng phản xạ sóng âm trên các vách tường bê tông và kim loại, mang lại chiều sâu không gian chân thực.
+- **Hiệu ứng Doppler trên các mục tiêu cơ động (`TargetMover`)**:
+  - Các bia bay cơ động (Target 2 và Target 5) được tích hợp `AudioSource` 3D phát tiếng động cơ servo thủ tục (`GetServoHumClip`). Khi mục tiêu di chuyển qua lại trước mặt người chơi, hệ thống tự động tính toán vận tốc và áp dụng hiệu ứng Doppler (`dopplerLevel = 1.8f`), khiến cao độ âm thanh tăng lên khi bia tiến lại gần và trầm xuống khi bia lướt ra xa.
+- **Nguồn phát âm thanh môi trường định vị 2 bên vách tường (Ambient Spatial Emitters)**:
+  - *Vách tường trái (X = -13.5m)*: Máy phát năng lượng Plasma (`Plasma Power Generator`) với ánh sáng cyan và âm thanh rền trầm sub-bass 55Hz kèm sóng hài điện tử 110Hz.
+  - *Vách tường phải (X = +13.5m)*: Trạm chuyển tiếp dữ liệu lượng tử (`Quantum Data Relay`) với ánh sáng cam hổ phách và âm thanh truyền dữ liệu số tần số cao (digital chirps & telemetry relay).
+  - Khi người chơi đứng ở giữa, hai tai sẽ nghe thấy hai âm thanh môi trường hoàn toàn tách biệt; khi xoay đầu hoặc đi sát vào từng tường, âm lượng bên tai tương ứng sẽ đạt cực đại.
+- **Đầu dò âm thanh 3D xoay 360° thử nghiệm tương tác (`SpatialAudioProbe`)**:
+  - Nhấn phím `T` bất kỳ lúc nào hoặc bấm nút `[ 🎧 THỬ ÂM THANH 3D XOAY 360° ]` trong tab Âm thanh của Menu Cài đặt để kích hoạt đầu dò âm thanh 3D.
+  - Một nguồn phát âm thanh ảo sẽ bay theo quỹ đạo hình tròn bán kính 3.8m quanh tai người chơi với tốc độ 48°/giây, phát ra các tiếng chuông sonar 3D đều đặn mỗi 0.62 giây (`GetProbePingClip`).
+  - Trên màn hình xuất hiện thẻ đo lường viễn trắc HUD hiển thị góc phương vị thời gian thực (Azimuth Angle từ -180° đến +180°), khoảng cách và tỷ lệ cân bằng âm lượng hai tai L/R để người chơi kiểm chứng khả năng panning 3D.
+- **Chỉ báo hướng âm thanh 3D trên tâm ngắm (Directional Audio Cues)**:
+  - Khi các âm thanh 3D quan trọng phát ra xung quanh (tiếng nổ, tiếng va chạm, tiếng probe ping), HUD tự động hiển thị các cung vòng hoặc mũi tên chỉ hướng xung quanh tâm ngắm crosshair, hướng dẫn trực quan vị trí phát ra âm thanh.
+- **Âm thanh vũ khí & gameplay chất lượng cao**:
+  - Bốn âm thanh gameplay cơ bản `gunshot`, `reload`, `footstep` và `land` cùng âm thanh khai hỏa chùm năng lượng `laser` được nạp trực tiếp từ `Assets/Resources/Audio` khi vào Play Mode.
+  - Âm thanh bắn laser sử dụng file `Assets/Audio/laser.mp3` (`Assets/Resources/Audio/laser.mp3`): tích hợp qua `AudioSource` 2D chuyên dụng chạy lặp (`loop = true`) liên tục trong suốt thời gian giữ chuột phải, tự động biến điệu cao độ (dynamic pitch modulation) dao động nhẹ theo luồng plasma và dừng ngay lập tức khi nhả chuột hoặc cạn kiệt pin năng lượng.
+  - Tiếng súng, nạp đạn, bước chân và laser sử dụng asset MP3; hiệu ứng tiếp đất MP3 chỉ phát sau khi người chơi thực sự rơi đủ nhanh.
 
 ### Hiệu ứng đặc biệt
 
@@ -134,6 +148,8 @@ Bốn âm thanh gameplay cơ bản `gunshot`, `reload`, `footstep` và `land` c�
   - *Tab Âm thanh (Audio)*:
     - 3 thanh trượt điều chỉnh âm lượng độc lập: Âm lượng tổng (Master), Hiệu ứng (SFX), Môi trường (Ambience) từ 0% đến 100%.
     - Nút kiểm tra âm thanh tức thì: `♫ PHÁT THỬ CHUÔNG TIÊU DIỆT` để nghe thử âm thanh chuông tinh thể kết liễu.
+    - Nút kích hoạt thử nghiệm âm thanh 3D xoay 360°: `[ 🎧 THỬ ÂM THANH 3D XOAY 360° (PHÍM T) ]`.
+    - Hộp kiểm bật/tắt chỉ báo hướng âm thanh 3D trên tâm ngắm (`Chỉ báo hướng âm thanh 3D`).
   - *Tab Gameplay*:
     - Thanh trượt độ nhạy chuột từ `0.5x` đến `5.0x`.
     - Hộp chọn bật/tắt rung chấn màn hình (`Screen Shake`).
@@ -141,7 +157,10 @@ Bốn âm thanh gameplay cơ bản `gunshot`, `reload`, `footstep` và `land` c�
 
 ## Các script chính
 
-- `FirstPersonController.cs`: di chuyển, nhìn, phát tiếng bước chân, kết nối với `GameSettings` và xử lý mở/đóng menu cài đặt.
+- `FirstPersonController.cs`: di chuyển, nhìn, phát tiếng bước chân, kết nối với `GameSettings`, phím tắt `T` bật/tắt đầu dò âm thanh 3D và xử lý mở/đóng menu cài đặt.
+- `SpatialAudioUtility.cs`: trung tâm xử lý không gian hóa âm thanh 3D, áp dụng đường cong suy giảm logarit chuẩn hóa (`PlayClipAtPoint3D`), bộ tổng hợp âm thanh thủ tục (servo hum, plasma generator, quantum relay, probe ping) và kích hoạt sự kiện chỉ báo hướng âm thanh HUD.
+- `SpatialAudioProbe.cs`: module kiểm thử âm thanh 3D xoay 360 độ, điều khiển nguồn phát âm thanh ảo bay quanh đầu người chơi theo chu kỳ, tính toán góc phương vị azimuth và tỷ lệ pan hai tai stereo thời gian thực.
+- `TargetMover.cs`: điều khiển chuyển động dao động của bia bay cơ động, tích hợp `AudioSource` 3D tiếng động cơ servo thủ tục và biến điệu cao độ Doppler thời gian thực (`dopplerLevel = 1.8f`).
 - `WeaponController.cs`: raycast bắn súng, băng đạn 12 viên, nạp đạn, recoil, âm thanh, rung camera, muzzle flash, tracer, cơ chế tích sạc laser, điều khiển màn hình năng lượng thân súng, chùm laser aura đa tầng cùng hệ thống đèn chiếu hào quang họng súng và điểm chạm, tôn trọng cấu hình phím từ `GameSettings`.
 - `GameSettings.cs`: quản lý tập trung toàn bộ cấu hình trò chơi, lưu trữ `PlayerPrefs`, xử lý đổi phím (key rebinding), âm lượng, độ nhạy chuột và trạng thái modal cài đặt.
 - `DemoHud.cs`: HUD giao diện viễn tưởng thế hệ mới (module súng, đạn pips, thanh năng lượng, sinh trắc học, bảng điểm), hệ thống tâm ngắm thông minh đa chế độ và modal Menu Cài Đặt tương tác 3 tab.
@@ -174,3 +193,9 @@ Bốn âm thanh gameplay cơ bản `gunshot`, `reload`, `footstep` và `land` c�
 10. Giữ chuột phải để khai hỏa tia laser: trình bày tia laser kép với chùm hào quang cam lửa rực cháy dọc thẳng tắp trục nòng súng, ánh sáng hào quang họng súng chiếu sáng rực rỡ và ánh sáng điểm chạm tại mục tiêu, trong khi màn hình năng lượng trên thân súng và thanh HUD giảm dần chân thực.
 11. Nhấn `G` (hoặc phím đã gán), quan sát nhân vật cầm lựu đạn, click chuột trái để ném và theo dõi vụ nổ siêu uy lực cùng cột khói nấm cuồn cuộn.
 12. Nhấn `H` (hoặc phím đã gán), click chuột trái để ném bom khói và quan sát đám khói 4 tầng lan rộng, tồn tại trong nhiều giây.
+13. **Trải nghiệm Không gian hóa Âm thanh 3D (Khuyên dùng tai nghe Stereo/Headphones)**:
+    - **Thử nghiệm Đầu dò xoay 360° (Phím T)**: Nhấn phím `T` để bật đầu dò âm thanh 3D. Quan sát thẻ viễn trắc ở cạnh trên HUD hiển thị góc phương vị (Azimuth Angle) và tỷ lệ phân bổ L/R stereo pan. Lắng nghe tiếng chuông 3D xoay vòng mượt mà 360° từ trước mặt sang tai phải, vòng ra sau gáy, sang tai trái rồi trở lại trước mặt. Nhấn `T` lần nữa để tắt.
+    - **Phân tách âm thanh môi trường 2 bên vách**: Di chuyển sang sát vách tường bên trái cạnh máy phát Plasma (`Plasma Power Generator`) để nghe tiếng rền sub-bass 55Hz cực đại ở tai trái. Sau đó di chuyển sang vách tường bên phải cạnh trạm chuyển tiếp lượng tử (`Quantum Data Relay`) để nghe chuỗi tín hiệu số tần số cao ở tai phải. Quay đầu 180° để cảm nhận vị trí âm thanh đảo chiều tức thì giữa hai tai.
+    - **Hiệu ứng Doppler trên bia bay di động**: Đứng quan sát bia Target 2 (hoặc Target 5) bay ngang qua lại. Lắng nghe tiếng động cơ servo tự động tăng cao độ (pitch vút lên) khi bia đang bay hướng về phía người chơi và hạ trầm xuống khi bia lướt xa dần.
+    - **Độ suy giảm âm lượng theo khoảng cách & Vang dội phòng kín (Acoustic Reverb)**: Đứng ở cửa phòng tập bắn một bia ở xa (Target 4 hoặc Target 8 cự ly 24m) so với bắn bia ở cự ly gần (Target 1 cự ly 6m) để nghe sự khác biệt rõ nét về độ vang phòng (`AudioReverbZone`), âm lượng suy giảm logarit và độ trễ phản hồi không gian.
+

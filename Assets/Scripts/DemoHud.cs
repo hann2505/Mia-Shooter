@@ -37,16 +37,28 @@ namespace MiaShooter
         private GUIStyle settingToggleStyle;
         private GUIStyle actionButtonStyle;
 
+        private struct SoundCue
+        {
+            public Vector3 worldPosition;
+            public float timestamp;
+            public float volume;
+            public Color color;
+        }
+
+        private readonly List<SoundCue> activeSoundCues = new List<SoundCue>();
+
         private void OnEnable()
         {
             WeaponController.OnHitTarget += HandleTargetHit;
             DemoGameManager.TargetEliminated += HandleTargetEliminated;
+            SpatialAudioUtility.OnSpatialSoundPlayed += HandleSpatialSound;
         }
 
         private void OnDisable()
         {
             WeaponController.OnHitTarget -= HandleTargetHit;
             DemoGameManager.TargetEliminated -= HandleTargetEliminated;
+            SpatialAudioUtility.OnSpatialSoundPlayed -= HandleSpatialSound;
         }
 
         private void Update()
@@ -65,6 +77,19 @@ namespace MiaShooter
             {
                 mainCamera = Camera.main;
             }
+
+            activeSoundCues.RemoveAll(c => Time.time - c.timestamp > 0.75f);
+        }
+
+        private void HandleSpatialSound(Vector3 position, float volume, Color color)
+        {
+            activeSoundCues.Add(new SoundCue
+            {
+                worldPosition = position,
+                timestamp = Time.time,
+                volume = volume,
+                color = color
+            });
         }
 
         private void HandleTargetHit()
@@ -109,6 +134,9 @@ namespace MiaShooter
 
             // 5. Central Reactive Crosshair & Hitmarker
             DrawCrosshair(scale);
+
+            // 5b. 3D Spatial Audio Probe Telemetry HUD
+            DrawSpatialAudioProbeHUD(scale);
 
             // 6. Interactive Settings Modal (when open)
             if (GameSettings.IsSettingsOpen)
@@ -459,6 +487,67 @@ namespace MiaShooter
                     DrawRect(new Rect(cx + hitDist - hitThick, cy + hitDist - hitLen, hitThick, hitLen), hitColor);
                 }
             }
+
+            // 6. Directional 3D Audio Indicators around Crosshair
+            if (GameSettings.DirectionalSoundIndicatorsEnabled && activeSoundCues.Count > 0 && mainCamera != null)
+            {
+                float cueRadius = (68f + 6f * Mathf.Sin(Time.time * 8f)) * crosshairScale;
+                for (int i = 0; i < activeSoundCues.Count; i++)
+                {
+                    SoundCue cue = activeSoundCues[i];
+                    float elapsed = Time.time - cue.timestamp;
+                    if (elapsed > 0.75f) continue;
+                    float alpha = (1f - (elapsed / 0.75f)) * Mathf.Clamp01(cue.volume);
+
+                    Vector3 toCue = cue.worldPosition - mainCamera.transform.position;
+                    Vector3 localDir = mainCamera.transform.InverseTransformDirection(toCue.normalized);
+                    float angleRad = Mathf.Atan2(localDir.x, localDir.z); // -pi to +pi
+
+                    float screenX = cx + Mathf.Sin(angleRad) * cueRadius;
+                    float screenY = cy - Mathf.Cos(angleRad) * cueRadius;
+
+                    Color cueCol = new Color(cue.color.r, cue.color.g, cue.color.b, alpha * 0.95f);
+                    float arcW = 10f * scale;
+                    float arcH = 4f * scale;
+                    DrawRectWithOutline(new Rect(screenX - arcW * 0.5f, screenY - arcH * 0.5f, arcW, arcH), cueCol, new Color(0f, 0f, 0f, alpha), 1f);
+                }
+            }
+        }
+
+        private void DrawSpatialAudioProbeHUD(float scale)
+        {
+            if (SpatialAudioProbe.Instance == null || !SpatialAudioProbe.Instance.IsActive)
+            {
+                return;
+            }
+
+            float cardW = 540f * scale;
+            float cardH = 76f * scale;
+            float cx = (Screen.width - cardW) * 0.5f;
+            float cy = 16f;
+            Rect cardRect = new Rect(cx, cy, cardW, cardH);
+
+            DrawTechCard(cardRect, new Color(0.02f, 0.05f, 0.09f, 0.92f), new Color(0.18f, 0.92f, 1f, 0.95f), scale);
+
+            float azimuth = SpatialAudioProbe.Instance.CurrentAzimuth;
+            string directionLabel;
+            if (azimuth > -22.5f && azimuth <= 22.5f) directionLabel = "TRƯỚC MẶT (CENTER)";
+            else if (azimuth > 22.5f && azimuth <= 67.5f) directionLabel = "TRƯỚC - PHẢI (FRONT-RIGHT)";
+            else if (azimuth > 67.5f && azimuth <= 112.5f) directionLabel = "TAI PHẢI (RIGHT 100%)";
+            else if (azimuth > 112.5f && azimuth <= 157.5f) directionLabel = "SAU - PHẢI (REAR-RIGHT)";
+            else if (azimuth > 157.5f || azimuth <= -157.5f) directionLabel = "PHÍA SAU (BEHIND)";
+            else if (azimuth > -157.5f && azimuth <= -112.5f) directionLabel = "SAU - TRÁI (REAR-LEFT)";
+            else if (azimuth > -112.5f && azimuth <= -67.5f) directionLabel = "TAI TRÁI (LEFT 100%)";
+            else directionLabel = "TRƯỚC - TRÁI (FRONT-LEFT)";
+
+            GUI.Label(new Rect(cx + 16f * scale, cy + 8f * scale, cardW - 32f * scale, 22f * scale),
+                $"🎧 THỬ NGHIỆM ÂM THANH 3D ĐANG BẬT // GÓC QUAY: {azimuth:+000;-000;000}°", headerTitleStyle);
+
+            GUI.Label(new Rect(cx + 16f * scale, cy + 30f * scale, cardW - 32f * scale, 20f * scale),
+                $"VỊ TRÍ ĐỊNH VỊ: {directionLabel} • BÁN KÍNH: {SpatialAudioProbe.Instance.OrbitRadius:F1}M", headerSubStyle);
+
+            GUI.Label(new Rect(cx + 16f * scale, cy + 50f * scale, cardW - 32f * scale, 18f * scale),
+                "[ Đeo tai nghe cảm nhận vòng xoay 360° • Nhấn phím T để Tắt/Bật ]", scoreLabelStyle);
         }
 
         #endregion
@@ -681,17 +770,49 @@ namespace MiaShooter
                 GameSettings.MusicVolume = music;
                 GameSettings.SaveSettings();
             }
-            y += rowH + 20f * scale;
+            y += rowH + 6f * scale;
+
+            bool dirAudio = GameSettings.DirectionalSoundIndicatorsEnabled;
+            if (DrawToggleRow("CHỈ BÁO HƯỚNG ÂM THANH 3D TRÊN HUD", ref dirAudio, x, y, w, scale))
+            {
+                GameSettings.DirectionalSoundIndicatorsEnabled = dirAudio;
+                GameSettings.SaveSettings();
+            }
+            y += rowH + 12f * scale;
+
+            // 3D Audio Orbiting Probe Button
+            bool isProbeActive = SpatialAudioProbe.Instance != null && SpatialAudioProbe.Instance.IsActive;
+            float probeBtnW = 380f * scale;
+            float probeBtnH = 38f * scale;
+            string probeText = isProbeActive
+                ? "🎧 ĐANG BẬT THỬ ÂM THANH 3D (BẤM ĐỂ TẮT / PHÍM T)"
+                : "🎧 BẬT CHẾ ĐỘ THỬ ÂM THANH 3D XOAY 360° (PHÍM T)";
+
+            Color probeBg = isProbeActive ? new Color(0.12f, 0.45f, 0.65f, 0.95f) : new Color(0.08f, 0.18f, 0.28f, 0.85f);
+            Color probeBorder = isProbeActive ? new Color(0.2f, 0.95f, 1f, 1f) : new Color(0.18f, 0.92f, 1f, 0.65f);
+            Rect probeRect = new Rect(x + (w - probeBtnW) * 0.5f, y, probeBtnW, probeBtnH);
+            DrawRectWithOutline(probeRect, probeBg, probeBorder, 1.5f * scale);
+
+            if (GUI.Button(probeRect, probeText, actionButtonStyle))
+            {
+                SpatialAudioProbe.Instance?.Toggle();
+            }
+            y += probeBtnH + 6f * scale;
+
+            GUI.Label(new Rect(x, y, w, 28f * scale),
+                "★ Đeo tai nghe: đầu dò 3D bay quanh đầu bạn ở bán kính 3.8m, phát âm thanh định vị rõ 4 hướng: Trước ➔ Phải ➔ Sau ➔ Trái ➔ Trước!",
+                scoreLabelStyle);
+            y += 34f * scale;
 
             // Test Sound Chime Button
-            float testBtnW = 240f * scale;
-            float testBtnH = 38f * scale;
+            float testBtnW = 260f * scale;
+            float testBtnH = 34f * scale;
             if (GUI.Button(new Rect(x + (w - testBtnW) * 0.5f, y, testBtnW, testBtnH), "♫ PHÁT THỬ CHUÔNG TIÊU DIỆT", actionButtonStyle))
             {
                 AudioClip chime = VfxUtility.GetKillChimeAudio();
                 if (chime != null)
                 {
-                    AudioSource.PlayClipAtPoint(chime, Camera.main != null ? Camera.main.transform.position : Vector3.zero, GameSettings.SfxVolume);
+                    SpatialAudioUtility.PlayClipAtPoint3D(chime, Camera.main != null ? Camera.main.transform.position + Camera.main.transform.forward * 4f : Vector3.zero, GameSettings.SfxVolume);
                 }
             }
         }

@@ -351,7 +351,7 @@ namespace MiaShooter
                     VfxUtility.SpawnImpact(hit.point, hit.normal, new Color(1f, 0.75f, 0.2f));
                     if (emptyClip != null)
                     {
-                        AudioSource.PlayClipAtPoint(emptyClip, hit.point, 0.25f);
+                        SpatialAudioUtility.PlayClipAtPoint3D(emptyClip, hit.point, 0.35f, 1.5f, 25f, pitch: Random.Range(0.92f, 1.08f));
                     }
                 }
             }

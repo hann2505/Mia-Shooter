@@ -200,6 +200,48 @@ namespace MiaShooterEditor
 
             CreateCube("Central Platform", new Vector3(0f, 0.35f, 23f), new Vector3(9f, 0.7f, 3.5f), dark, environment.transform);
             CreateTitleText(environment.transform);
+
+            // 3D Acoustic Environment Reverb Zone
+            AudioReverbZone reverbZone = environment.AddComponent<AudioReverbZone>();
+            reverbZone.reverbPreset = AudioReverbPreset.Room;
+            reverbZone.minDistance = 6f;
+            reverbZone.maxDistance = 50f;
+
+            // --- Left Wall 3D Sound Emitter: Plasma Power Generator ---
+            GameObject leftGen = new GameObject("Plasma Power Generator");
+            leftGen.transform.SetParent(environment.transform);
+            leftGen.transform.position = new Vector3(-13.4f, 2.5f, 10f);
+            CreateCube("Generator Base", new Vector3(-13.4f, 1.2f, 10f), new Vector3(1.1f, 2.4f, 2.2f), dark, environment.transform);
+            CreateCylinder("Generator Core", new Vector3(-13.3f, 2.5f, 10f), new Vector3(0.75f, 0.55f, 0.75f), cyanGlow, environment.transform);
+            CreateCube("Generator Hood", new Vector3(-13.4f, 3.4f, 10f), new Vector3(1.0f, 0.35f, 1.8f), dark, environment.transform);
+
+            AudioSource leftAudio = leftGen.AddComponent<AudioSource>();
+            leftAudio.clip = SpatialAudioUtility.GetPlasmaReactorClip();
+            leftAudio.loop = true;
+            leftAudio.playOnAwake = true;
+            leftAudio.spatialBlend = 1.0f;
+            leftAudio.rolloffMode = AudioRolloffMode.Logarithmic;
+            leftAudio.minDistance = 2.5f;
+            leftAudio.maxDistance = 22.0f;
+            leftAudio.volume = 0.35f;
+
+            // --- Right Wall 3D Sound Emitter: Quantum Data Relay ---
+            GameObject rightRelay = new GameObject("Quantum Data Relay");
+            rightRelay.transform.SetParent(environment.transform);
+            rightRelay.transform.position = new Vector3(13.4f, 2.5f, 15f);
+            CreateCube("Relay Base", new Vector3(13.4f, 1.2f, 15f), new Vector3(1.1f, 2.4f, 2.2f), dark, environment.transform);
+            CreateCube("Relay Screen", new Vector3(13.3f, 2.5f, 15f), new Vector3(0.12f, 0.85f, 1.4f), orangeGlow, environment.transform);
+            CreateCube("Relay Hood", new Vector3(13.4f, 3.4f, 15f), new Vector3(1.0f, 0.35f, 1.8f), dark, environment.transform);
+
+            AudioSource rightAudio = rightRelay.AddComponent<AudioSource>();
+            rightAudio.clip = SpatialAudioUtility.GetQuantumRelayClip();
+            rightAudio.loop = true;
+            rightAudio.playOnAwake = true;
+            rightAudio.spatialBlend = 1.0f;
+            rightAudio.rolloffMode = AudioRolloffMode.Logarithmic;
+            rightAudio.minDistance = 2.5f;
+            rightAudio.maxDistance = 22.0f;
+            rightAudio.volume = 0.30f;
         }
 
         private static void BuildLighting()
@@ -439,6 +481,7 @@ namespace MiaShooterEditor
             GameObject systems = new GameObject("GAME SYSTEMS");
             systems.AddComponent<DemoGameManager>();
             systems.AddComponent<DemoHud>();
+            systems.AddComponent<SpatialAudioProbe>();
 
             AudioSource ambientSource = systems.AddComponent<AudioSource>();
             ambientSource.clip = ambience;

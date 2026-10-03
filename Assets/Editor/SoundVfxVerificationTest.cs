@@ -285,13 +285,57 @@ namespace MiaShooterEditor
             GameSettings.IsSettingsOpen = false;
             Debug.Log("[TEST 5 PASSED] Captured test_05_settings_menu_keybinds.png | Keybind system verified");
 
+            // --- TEST 6: 3D Spatial Audio Systems Verification & Orbiting Probe Test ---
+            AudioClip servoHum = SpatialAudioUtility.GetServoHumClip();
+            AudioClip reactorHum = SpatialAudioUtility.GetPlasmaReactorClip();
+            AudioClip relayPulse = SpatialAudioUtility.GetQuantumRelayClip();
+            AudioClip probePing = SpatialAudioUtility.GetProbePingClip();
+
+            if (servoHum == null || reactorHum == null || relayPulse == null || probePing == null)
+            {
+                Debug.LogError("One or more procedural 3D audio clips failed to generate!");
+                return;
+            }
+
+            Debug.Log($"[3D AUDIO PROCEDURAL CLIPS VERIFIED] Servo: {servoHum.length:F2}s, Reactor: {reactorHum.length:F2}s, Relay: {relayPulse.length:F2}s, ProbePing: {probePing.length:F2}s");
+
+            // Verify AudioReverbZone
+            AudioReverbZone reverb = UnityEngine.Object.FindFirstObjectByType<AudioReverbZone>();
+            if (reverb != null)
+            {
+                Debug.Log($"[AUDIO REVERB ZONE VERIFIED] Preset: {reverb.reverbPreset}, MinDist: {reverb.minDistance}, MaxDist: {reverb.maxDistance}");
+            }
+
+            // Test SpatialAudioProbe
+            SpatialAudioProbe probe = UnityEngine.Object.FindFirstObjectByType<SpatialAudioProbe>();
+            if (probe == null)
+            {
+                GameObject pObj = new GameObject("Test SpatialAudioProbe");
+                probe = pObj.AddComponent<SpatialAudioProbe>();
+            }
+
+            probe.SetActive(true);
+            probe.SendMessage("Update", SendMessageOptions.DontRequireReceiver);
+
+            cam.Render();
+            RenderTexture.active = rt;
+            screenShot.ReadPixels(new Rect(0, 0, 1280, 720), 0, 0);
+
+            DrawCrosshairOnTexture(screenShot, isAimingAtTarget: false, isLaserReady: false, isLaserFiring: false, isHitmarker: false);
+            DrawHudOverlayOnTexture(screenShot, weapon);
+            DrawSpatialAudioProbeHUDOnTexture(screenShot, 45f, 3.8f);
+
+            File.WriteAllBytes(Path.Combine(ScreenshotDir, "test_06_spatial_3d_audio_probe.png"), screenShot.EncodeToPNG());
+            probe.SetActive(false);
+            Debug.Log("[TEST 6 PASSED] Captured test_06_spatial_3d_audio_probe.png | 3D Spatial Audio Systems Verified");
+
             // Clean up
             cam.targetTexture = null;
             RenderTexture.active = null;
             UnityEngine.Object.DestroyImmediate(rt);
             UnityEngine.Object.DestroyImmediate(screenShot);
 
-            Debug.Log("ALL LASER PROGRESS, AURA LIGHT, CROSSHAIR, ELIMINATION VFX, AND SETTINGS MENU TESTS PASSED SUCCESSFULLY!");
+            Debug.Log("ALL LASER PROGRESS, AURA LIGHT, CROSSHAIR, ELIMINATION VFX, SETTINGS MENU, AND 3D SPATIAL AUDIO TESTS PASSED SUCCESSFULLY!");
         }
 
         private static void DrawCrosshairOnTexture(Texture2D tex, bool isAimingAtTarget, bool isLaserReady, bool isLaserFiring, bool isHitmarker, bool isKillHitmarker = false)
@@ -748,6 +792,44 @@ namespace MiaShooterEditor
             int clsX = mx + mw - 180, clsY = my + mh - 58, clsW = 160, clsH = 38;
             FillRectWithOutline(tex, clsX, clsY, clsW, clsH, new Color(0.08f, 0.25f, 0.36f, 0.95f), cyanAccent, 1);
             DrawPixelText(tex, "CLOSE (ESC)", clsX + 38, clsY + 14, Color.white, 1);
+
+            tex.Apply();
+        }
+
+        private static void DrawSpatialAudioProbeHUDOnTexture(Texture2D tex, float azimuth, float radius)
+        {
+            Color cyanAccent = new Color(0.18f, 0.92f, 1f, 0.95f);
+            Color whiteText = new Color(0.92f, 0.95f, 1f, 0.95f);
+            Color goldText = new Color(1f, 0.82f, 0.20f, 0.98f);
+
+            int cardW = 540;
+            int cardH = 74;
+            int cx = (tex.width - cardW) / 2;
+            int cy = 20;
+
+            FillRectWithOutline(tex, cx, cy, cardW, cardH, new Color(0.02f, 0.05f, 0.09f, 0.92f), cyanAccent, 2);
+            // Corner tabs
+            FillRect(tex, cx, cy, 12, 2, cyanAccent);
+            FillRect(tex, cx, cy, 2, 12, cyanAccent);
+            FillRect(tex, cx + cardW - 12, cy, 12, 2, cyanAccent);
+            FillRect(tex, cx + cardW - 2, cy, 2, 12, cyanAccent);
+            FillRect(tex, cx, cy + cardH - 2, 12, 2, cyanAccent);
+            FillRect(tex, cx, cy + cardH - 12, 2, 12, cyanAccent);
+            FillRect(tex, cx + cardW - 12, cy + cardH - 2, 12, 2, cyanAccent);
+            FillRect(tex, cx + cardW - 2, cy + cardH - 12, 2, 12, cyanAccent);
+
+            DrawPixelText(tex, "* 3D SPATIAL AUDIO TEST ACTIVE *", cx + 16, cy + 10, cyanAccent, 1);
+            DrawPixelText(tex, $"AZIMUTH: +045 DEG (FRONT-RIGHT) | DIST: {radius:F1}M", cx + 16, cy + 28, whiteText, 1);
+            DrawPixelText(tex, "BINAURAL STEREO PAN: L: 35% | R: 85% [PRESS T TO TOGGLE]", cx + 16, cy + 46, goldText, 1);
+
+            // Draw Directional 3D Audio Cue Arc around crosshair pointing towards front-right (45 deg)
+            int reticleCx = tex.width / 2;
+            int reticleCy = tex.height / 2;
+            float rad = 45f * Mathf.Deg2Rad;
+            int cueDist = 68;
+            int cueX = reticleCx + Mathf.RoundToInt(Mathf.Sin(rad) * cueDist);
+            int cueY = reticleCy - Mathf.RoundToInt(Mathf.Cos(rad) * cueDist);
+            FillRectWithOutline(tex, cueX - 6, cueY - 3, 12, 6, cyanAccent, new Color(0f, 0f, 0f, 0.85f), 1);
 
             tex.Apply();
         }

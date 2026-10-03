@@ -43,7 +43,7 @@ namespace MiaShooter
             VfxUtility.SpawnImpact(hitPoint, -shotDirection, new Color(0.15f, 0.9f, 1f));
             if (hitClip != null)
             {
-                AudioSource.PlayClipAtPoint(hitClip, hitPoint, 0.75f);
+                SpatialAudioUtility.PlayClipAtPoint3D(hitClip, hitPoint, 0.85f, 2.0f, 30f, pitch: Random.Range(0.96f, 1.04f), cueColor: GetPrimaryColor());
             }
 
             if (health <= 0)
@@ -74,12 +74,12 @@ namespace MiaShooter
             AudioClip killChime = VfxUtility.GetKillChimeAudio();
             if (killChime != null)
             {
-                AudioSource.PlayClipAtPoint(killChime, transform.position, 1.0f);
+                SpatialAudioUtility.PlayClipAtPoint3D(killChime, transform.position, 1.0f, 3.0f, 55f, 1.0f, Color.white);
             }
 
             if (explosionClip != null)
             {
-                AudioSource.PlayClipAtPoint(explosionClip, transform.position, 0.75f);
+                SpatialAudioUtility.PlayClipAtPoint3D(explosionClip, transform.position, 0.85f, 3.0f, 45f, 1.0f, primaryColor);
             }
 
             CameraShake shake = Camera.main != null ? Camera.main.GetComponent<CameraShake>() : null;

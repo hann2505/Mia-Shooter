@@ -37,6 +37,8 @@ namespace MiaShooter
         public static float MasterVolume { get; set; } = 1.0f;
         public static float SfxVolume { get; set; } = 1.0f;
         public static float MusicVolume { get; set; } = 0.75f;
+        public static bool SpatialAudioDemoActive { get; set; } = false;
+        public static bool DirectionalSoundIndicatorsEnabled { get; set; } = true;
         public static float MouseSensitivity { get; set; } = 2.0f;
         public static bool ScreenShakeEnabled { get; set; } = true;
         public static float CrosshairScale { get; set; } = 1.0f;
@@ -121,6 +123,8 @@ namespace MiaShooter
             MasterVolume = 1.0f;
             SfxVolume = 1.0f;
             MusicVolume = 0.75f;
+            SpatialAudioDemoActive = false;
+            DirectionalSoundIndicatorsEnabled = true;
             MouseSensitivity = 2.0f;
             ScreenShakeEnabled = true;
             CrosshairScale = 1.0f;
