@@ -48,7 +48,15 @@ namespace MiaShooterEditor
             AudioClip laser = LoadAudio("Assets/Audio/laser.mp3");
 
             Material floorMaterial = CreateMaterial("Floor", new Color(0.055f, 0.075f, 0.095f), 0.55f, 0.72f);
+            Material outdoorFloorMaterial = CreateMaterial("OutdoorFloor", new Color(0.10f, 0.11f, 0.13f), 0.25f, 0.45f);
             Material wallMaterial = CreateMaterial("Wall", new Color(0.095f, 0.12f, 0.15f), 0.35f, 0.55f);
+            Material ceilingMaterial = CreateMaterial("Ceiling", new Color(0.06f, 0.07f, 0.085f), 0.45f, 0.5f);
+            Material pillarMaterial = CreateMaterial("ConcretePillar", new Color(0.16f, 0.19f, 0.22f), 0.3f, 0.4f);
+            Material hazardMaterial = CreateMaterial("HazardStripe", new Color(0.92f, 0.78f, 0.08f), 0.3f, 0.45f);
+            Material containerGreen = CreateMaterial("ContainerGreen", new Color(0.14f, 0.25f, 0.17f), 0.65f, 0.5f);
+            Material containerOrange = CreateMaterial("ContainerOrange", new Color(0.85f, 0.36f, 0.08f), 0.65f, 0.5f);
+            Material containerBlue = CreateMaterial("ContainerBlue", new Color(0.12f, 0.34f, 0.52f), 0.65f, 0.5f);
+            Material barrierMaterial = CreateMaterial("ConcreteBarrier", new Color(0.36f, 0.39f, 0.43f), 0.18f, 0.28f);
             Material cyanMaterial = CreateMaterial("TargetCyan", new Color(0.05f, 0.65f, 0.85f), 0.7f, 0.8f);
             Material orangeMaterial = CreateMaterial("TargetOrange", new Color(1f, 0.3f, 0.06f), 0.65f, 0.75f);
             Material darkMaterial = CreateMaterial("DarkMetal", new Color(0.035f, 0.045f, 0.055f), 0.8f, 0.8f);
@@ -59,13 +67,15 @@ namespace MiaShooterEditor
             Material orangeGlow = CreateEmissiveMaterial("OrangeGlow", new Color(1f, 0.38f, 0.04f), 3.5f);
             Material hotRedGlow = CreateEmissiveMaterial("HotRedGlow", new Color(1f, 0.14f, 0.03f), 3.6f);
             Material hotGoldGlow = CreateEmissiveMaterial("HotGoldGlow", new Color(1f, 0.82f, 0.15f), 3.2f);
+            Material ceilingLampGlow = CreateEmissiveMaterial("CeilingLampGlow", new Color(0.85f, 0.95f, 1f), 3.0f);
+            Material warningAmberGlow = CreateEmissiveMaterial("WarningAmberGlow", new Color(1f, 0.65f, 0.05f), 3.5f);
             Material opticGlass = CreateMaterial("OpticGlass", new Color(0.08f, 0.16f, 0.2f), 0.95f, 0.95f);
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "SoundVfxDemo";
 
             ConfigureEnvironment();
-            BuildArena(floorMaterial, wallMaterial, darkMaterial, cyanGlow, orangeGlow);
+            BuildArena(floorMaterial, outdoorFloorMaterial, wallMaterial, ceilingMaterial, darkMaterial, pillarMaterial, hazardMaterial, containerGreen, containerOrange, containerBlue, barrierMaterial, cyanGlow, orangeGlow, ceilingLampGlow, warningAmberGlow);
             BuildLighting();
             BuildTargets(cyanMaterial, orangeMaterial, darkMaterial, hit: impact, explosion: explosion);
             BuildPlayer(gunshot, impact, footstep, reload, land, grenadeExplosion, smokeGrenade, laser, gunSteel, gunPanel, gunCeramic, cyanGlow, orangeGlow, hotRedGlow, hotGoldGlow, opticGlass, darkMaterial);
@@ -118,9 +128,9 @@ namespace MiaShooterEditor
                 blaster = GameObject.Find("Demo Blaster");
             }
 
-            if (targets.Length != 6)
+            if (targets.Length != 8)
             {
-                throw new InvalidOperationException($"Expected 6 targets, found {targets.Length}.");
+                throw new InvalidOperationException($"Expected 8 targets (4 indoor, 4 outdoor), found {targets.Length}.");
             }
 
             if (player == null || weapon == null || grenadeThrower == null || manager == null)
@@ -164,56 +174,186 @@ namespace MiaShooterEditor
         private static void ConfigureEnvironment()
         {
             RenderSettings.fog = true;
-            RenderSettings.fogColor = new Color(0.025f, 0.04f, 0.065f);
+            RenderSettings.fogColor = new Color(0.08f, 0.12f, 0.16f);
             RenderSettings.fogMode = FogMode.ExponentialSquared;
-            RenderSettings.fogDensity = 0.012f;
+            RenderSettings.fogDensity = 0.0055f;
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.11f, 0.16f, 0.22f);
-            RenderSettings.ambientEquatorColor = new Color(0.055f, 0.075f, 0.11f);
-            RenderSettings.ambientGroundColor = new Color(0.018f, 0.025f, 0.035f);
+            RenderSettings.ambientSkyColor = new Color(0.32f, 0.44f, 0.58f);
+            RenderSettings.ambientEquatorColor = new Color(0.15f, 0.20f, 0.26f);
+            RenderSettings.ambientGroundColor = new Color(0.05f, 0.06f, 0.08f);
         }
 
         private static void BuildArena(
-            Material floor,
+            Material indoorFloor,
+            Material outdoorFloor,
             Material wall,
+            Material ceiling,
             Material dark,
+            Material pillar,
+            Material hazard,
+            Material containerGreen,
+            Material containerOrange,
+            Material containerBlue,
+            Material barrier,
             Material cyanGlow,
-            Material orangeGlow)
+            Material orangeGlow,
+            Material ceilingLampGlow,
+            Material warningAmberGlow)
         {
             GameObject environment = new GameObject("ENVIRONMENT");
-            CreateCube("Floor", new Vector3(0f, -0.5f, 10f), new Vector3(28f, 1f, 42f), floor, environment.transform);
-            CreateCube("Back Wall", new Vector3(0f, 5f, 30f), new Vector3(28f, 11f, 1f), wall, environment.transform);
-            CreateCube("Left Wall", new Vector3(-14f, 3f, 10f), new Vector3(1f, 7f, 42f), wall, environment.transform);
-            CreateCube("Right Wall", new Vector3(14f, 3f, 10f), new Vector3(1f, 7f, 42f), wall, environment.transform);
 
-            for (int z = -8; z <= 28; z += 4)
+            // =========================================================================
+            // 1. INDOOR ZONE: TACTICAL HANGAR & FIRING RANGE (z = -28m to +20m)
+            // =========================================================================
+            // Indoor Floor (Length 48m, Width 32m, centered at z = -4m)
+            CreateCube("Indoor Floor", new Vector3(0f, -0.5f, -4f), new Vector3(32f, 1f, 48f), indoorFloor, environment.transform);
+
+            // Indoor Ceiling (at y = 10.5m)
+            CreateCube("Indoor Ceiling", new Vector3(0f, 10.5f, -4f), new Vector3(32f, 0.6f, 48f), ceiling, environment.transform);
+
+            // Indoor Back Wall (at z = -28m, height 11m, width 32m)
+            CreateCube("Indoor Back Wall", new Vector3(0f, 5f, -28f), new Vector3(32f, 11f, 1f), wall, environment.transform);
+
+            // Indoor Left Wall (at x = -16m, from z = -28m to +20m)
+            CreateCube("Indoor Left Wall", new Vector3(-16f, 5f, -4f), new Vector3(1f, 11f, 48f), wall, environment.transform);
+
+            // Indoor Right Wall (at x = +16m, from z = -28m to +20m)
+            CreateCube("Indoor Right Wall", new Vector3(16f, 5f, -4f), new Vector3(1f, 11f, 48f), wall, environment.transform);
+
+            // Back Wall Detail Panels & Armory Window
+            CreateCube("Armory Observation Window", new Vector3(0f, 4.5f, -27.4f), new Vector3(12f, 3.2f, 0.2f), dark, environment.transform);
+            CreateCube("Window Glass", new Vector3(0f, 4.5f, -27.35f), new Vector3(11.6f, 2.8f, 0.05f), ceilingLampGlow, environment.transform);
+            CreateCube("Security Door Frame", new Vector3(0f, 1.25f, -27.4f), new Vector3(4.2f, 2.6f, 0.2f), dark, environment.transform);
+            CreateCube("Security Blast Door", new Vector3(0f, 1.25f, -27.35f), new Vector3(3.6f, 2.4f, 0.1f), hazard, environment.transform);
+
+            // Structural Pillars & Overhead Trusses along Left and Right Sides
+            for (float z = -22f; z <= 14f; z += 9f)
+            {
+                // Left Pillars
+                CreateCube($"Pillar L {z}", new Vector3(-15.2f, 5f, z), new Vector3(1.4f, 10.8f, 1.4f), pillar, environment.transform);
+                CreateCube($"Pillar Base L {z}", new Vector3(-15.2f, 0.6f, z), new Vector3(1.8f, 1.2f, 1.8f), dark, environment.transform);
+                // Right Pillars
+                CreateCube($"Pillar R {z}", new Vector3(15.2f, 5f, z), new Vector3(1.4f, 10.8f, 1.4f), pillar, environment.transform);
+                CreateCube($"Pillar Base R {z}", new Vector3(15.2f, 0.6f, z), new Vector3(1.8f, 1.2f, 1.8f), dark, environment.transform);
+
+                // Overhead Steel Cross-Trusses
+                CreateCube($"Ceiling Truss {z}", new Vector3(0f, 9.8f, z), new Vector3(30f, 0.45f, 0.55f), dark, environment.transform);
+
+                // Hanging Industrial Fluorescent Fixtures
+                CreateCube($"Lamp Housing L {z}", new Vector3(-6f, 9.3f, z), new Vector3(0.35f, 0.2f, 3.2f), dark, environment.transform);
+                CreateCube($"Lamp Tube L {z}", new Vector3(-6f, 9.15f, z), new Vector3(0.18f, 0.08f, 2.8f), ceilingLampGlow, environment.transform);
+                CreateCube($"Lamp Housing R {z}", new Vector3(6f, 9.3f, z), new Vector3(0.35f, 0.2f, 3.2f), dark, environment.transform);
+                CreateCube($"Lamp Tube R {z}", new Vector3(6f, 9.15f, z), new Vector3(0.18f, 0.08f, 2.8f), ceilingLampGlow, environment.transform);
+            }
+
+            // Floor Glowing Rails (Indoor firing lane markings)
+            for (float z = -24f; z <= 18f; z += 4f)
             {
                 CreateCube($"Floor Rail L {z}", new Vector3(-6f, 0.02f, z), new Vector3(0.08f, 0.04f, 2.2f), cyanGlow, environment.transform);
                 CreateCube($"Floor Rail R {z}", new Vector3(6f, 0.02f, z), new Vector3(0.08f, 0.04f, 2.2f), orangeGlow, environment.transform);
             }
 
-            for (int x = -10; x <= 10; x += 5)
-            {
-                CreateCube($"Back Panel {x}", new Vector3(x, 4.6f, 29.35f), new Vector3(4.2f, 7.8f, 0.15f), dark, environment.transform);
-                CreateCube($"Back Light {x}", new Vector3(x, 7.8f, 29.15f), new Vector3(3f, 0.08f, 0.08f), x % 10 == 0 ? cyanGlow : orangeGlow, environment.transform);
-            }
+            // Indoor Central Platform (elevated shooting deck)
+            CreateCube("Central Platform", new Vector3(0f, 0.35f, 16f), new Vector3(9f, 0.7f, 3.5f), dark, environment.transform);
 
-            CreateCube("Central Platform", new Vector3(0f, 0.35f, 23f), new Vector3(9f, 0.7f, 3.5f), dark, environment.transform);
-            CreateTitleText(environment.transform);
+            // =========================================================================
+            // 2. HANGAR BLAST GATE / TRANSITION ARCHWAY (z = +20m)
+            // =========================================================================
+            // Gate Left Pillar
+            CreateCube("Gate Left Wall", new Vector3(-12.5f, 5f, 20f), new Vector3(7f, 11f, 1.2f), wall, environment.transform);
+            CreateCube("Gate Left Frame", new Vector3(-8.8f, 4.2f, 20f), new Vector3(0.8f, 8.5f, 1.5f), dark, environment.transform);
+            CreateCube("Gate Left Hazard", new Vector3(-8.8f, 4.2f, 19.35f), new Vector3(0.6f, 8.2f, 0.05f), hazard, environment.transform);
 
-            // 3D Acoustic Environment Reverb Zone
-            AudioReverbZone reverbZone = environment.AddComponent<AudioReverbZone>();
-            reverbZone.reverbPreset = AudioReverbPreset.Room;
-            reverbZone.minDistance = 6f;
-            reverbZone.maxDistance = 50f;
+            // Gate Right Pillar
+            CreateCube("Gate Right Wall", new Vector3(12.5f, 5f, 20f), new Vector3(7f, 11f, 1.2f), wall, environment.transform);
+            CreateCube("Gate Right Frame", new Vector3(8.8f, 4.2f, 20f), new Vector3(0.8f, 8.5f, 1.5f), dark, environment.transform);
+            CreateCube("Gate Right Hazard", new Vector3(8.8f, 4.2f, 19.35f), new Vector3(0.6f, 8.2f, 0.05f), hazard, environment.transform);
 
-            // --- Left Wall 3D Sound Emitter: Plasma Power Generator ---
+            // Gate Upper Header Beam / Lintel
+            CreateCube("Gate Upper Beam", new Vector3(0f, 9.2f, 20f), new Vector3(18f, 2.6f, 1.4f), wall, environment.transform);
+            CreateCube("Gate Header Hazard Strip", new Vector3(0f, 8.1f, 19.35f), new Vector3(17.4f, 0.45f, 0.05f), hazard, environment.transform);
+            CreateCube("Warning Strobe Left", new Vector3(-8f, 8.5f, 19.2f), new Vector3(0.4f, 0.4f, 0.2f), warningAmberGlow, environment.transform);
+            CreateCube("Warning Strobe Right", new Vector3(8f, 8.5f, 19.2f), new Vector3(0.4f, 0.4f, 0.2f), warningAmberGlow, environment.transform);
+
+            // Transition Threshold on floor
+            CreateCube("Gate Floor Threshold", new Vector3(0f, 0.02f, 20f), new Vector3(17.6f, 0.05f, 1.2f), hazard, environment.transform);
+
+            // Arena Title (mounted above the hangar blast gate at z = 19.2f)
+            CreateTitleText(environment.transform, new Vector3(0f, 7.3f, 19.2f));
+
+            // =========================================================================
+            // 3. OUTDOOR ZONE: TACTICAL PROVING GROUNDS (z = +20m to +95m, NO CEILING!)
+            // =========================================================================
+            // Outdoor Ground (Length 75m, Width 52m, centered at z = 57.5m)
+            CreateCube("Outdoor Ground", new Vector3(0f, -0.5f, 57.5f), new Vector3(52f, 1f, 75f), outdoorFloor, environment.transform);
+
+            // Left Outdoor Perimeter Security Wall (from z = 20m to 95m, at x = -26m)
+            CreateCube("Outdoor Left Wall", new Vector3(-26f, 4f, 57.5f), new Vector3(1.2f, 9f, 75f), wall, environment.transform);
+            CreateCube("Outdoor Left Cap", new Vector3(-26f, 8.6f, 57.5f), new Vector3(1.6f, 0.4f, 75f), dark, environment.transform);
+
+            // Right Outdoor Perimeter Security Wall (from z = 20m to 95m, at x = +26m)
+            CreateCube("Outdoor Right Wall", new Vector3(26f, 4f, 57.5f), new Vector3(1.2f, 9f, 75f), wall, environment.transform);
+            CreateCube("Outdoor Right Cap", new Vector3(26f, 8.6f, 57.5f), new Vector3(1.6f, 0.4f, 75f), dark, environment.transform);
+
+            // Outdoor Far Backstop Blast Wall (at z = +95m)
+            CreateCube("Outdoor Backstop Wall", new Vector3(0f, 5.5f, 95f), new Vector3(53f, 12f, 2f), wall, environment.transform);
+            CreateCube("Backstop Berm Lower", new Vector3(0f, 2f, 93.8f), new Vector3(52f, 4f, 1.5f), dark, environment.transform);
+
+            // Connecting Wing Walls from Hangar to Perimeter at z = 20m
+            CreateCube("Wing Wall Left", new Vector3(-21f, 5f, 20f), new Vector3(10f, 11f, 1.2f), wall, environment.transform);
+            CreateCube("Wing Wall Right", new Vector3(21f, 5f, 20f), new Vector3(10f, 11f, 1.2f), wall, environment.transform);
+
+            // Outdoor Distance Markers painted on ground
+            CreateCube("Dist Marker 25M", new Vector3(0f, 0.015f, 25f), new Vector3(12f, 0.03f, 0.35f), ceilingLampGlow, environment.transform);
+            CreateCube("Dist Marker 50M", new Vector3(0f, 0.015f, 50f), new Vector3(16f, 0.03f, 0.35f), ceilingLampGlow, environment.transform);
+            CreateCube("Dist Marker 75M", new Vector3(0f, 0.015f, 75f), new Vector3(20f, 0.03f, 0.35f), ceilingLampGlow, environment.transform);
+
+            // Outdoor Tactical Shipping Containers
+            CreateCube("Container Green Left", new Vector3(-10f, 1.4f, 40f), new Vector3(2.6f, 2.8f, 6.2f), containerGreen, environment.transform);
+            CreateCube("Container Green Stack", new Vector3(-10f, 4.2f, 40f), new Vector3(2.6f, 2.8f, 6.2f), dark, environment.transform);
+            CreateCube("Container Orange Right", new Vector3(11f, 1.4f, 46f), new Vector3(2.6f, 2.8f, 6.2f), containerOrange, environment.transform);
+            CreateCube("Container Blue FarLeft", new Vector3(-14f, 1.4f, 62f), new Vector3(2.6f, 2.8f, 6.2f), containerBlue, environment.transform);
+
+            // Concrete Jersey Barriers
+            CreateCube("Barrier L 28", new Vector3(-5f, 0.6f, 28f), new Vector3(4.2f, 1.2f, 0.6f), barrier, environment.transform);
+            CreateCube("Barrier R 28", new Vector3(5f, 0.6f, 28f), new Vector3(4.2f, 1.2f, 0.6f), barrier, environment.transform);
+            CreateCube("Barrier L 52", new Vector3(-8f, 0.6f, 52f), new Vector3(5.5f, 1.2f, 0.6f), barrier, environment.transform);
+            CreateCube("Barrier R 52", new Vector3(8f, 0.6f, 52f), new Vector3(5.5f, 1.2f, 0.6f), barrier, environment.transform);
+
+            // Corner Watchtowers
+            BuildWatchtower("Watchtower Left", new Vector3(-23f, 0f, 90f), wall, dark, environment.transform);
+            BuildWatchtower("Watchtower Right", new Vector3(23f, 0f, 90f), wall, dark, environment.transform);
+
+            // =========================================================================
+            // 4. ACOUSTIC ENVIRONMENT & REVERB ARCHITECTURE
+            // =========================================================================
+            // Indoor Reverb Zone (Hangar center: z = -4m)
+            // Heavy cavernous acoustic reflections with 4.2s decay time
+            GameObject indoorReverbObj = new GameObject("Indoor Reverb Zone (Hangar)");
+            indoorReverbObj.transform.SetParent(environment.transform);
+            indoorReverbObj.transform.position = new Vector3(0f, 4f, -4f);
+            AudioReverbZone indoorReverb = indoorReverbObj.AddComponent<AudioReverbZone>();
+            indoorReverb.reverbPreset = AudioReverbPreset.Hangar;
+            indoorReverb.minDistance = 22f;
+            indoorReverb.maxDistance = 26f;
+
+            // Outdoor Reverb Zone (Outdoor field: z = +58m)
+            // Dry open-air acoustics with minimal reflections
+            GameObject outdoorReverbObj = new GameObject("Outdoor Reverb Zone (Open Air)");
+            outdoorReverbObj.transform.SetParent(environment.transform);
+            outdoorReverbObj.transform.position = new Vector3(0f, 4f, 58f);
+            AudioReverbZone outdoorReverb = outdoorReverbObj.AddComponent<AudioReverbZone>();
+            outdoorReverb.reverbPreset = AudioReverbPreset.Plain;
+            outdoorReverb.minDistance = 28f;
+            outdoorReverb.maxDistance = 48f;
+
+            // --- Left Wall 3D Sound Emitter: Plasma Power Generator (Inside Hangar) ---
             GameObject leftGen = new GameObject("Plasma Power Generator");
             leftGen.transform.SetParent(environment.transform);
-            leftGen.transform.position = new Vector3(-13.4f, 2.5f, 10f);
-            CreateCube("Generator Base", new Vector3(-13.4f, 1.2f, 10f), new Vector3(1.1f, 2.4f, 2.2f), dark, environment.transform);
-            CreateCylinder("Generator Core", new Vector3(-13.3f, 2.5f, 10f), new Vector3(0.75f, 0.55f, 0.75f), cyanGlow, environment.transform);
-            CreateCube("Generator Hood", new Vector3(-13.4f, 3.4f, 10f), new Vector3(1.0f, 0.35f, 1.8f), dark, environment.transform);
+            leftGen.transform.position = new Vector3(-15.2f, 2.5f, 4f);
+            CreateCube("Generator Base", new Vector3(-15.2f, 1.2f, 4f), new Vector3(1.1f, 2.4f, 2.2f), dark, environment.transform);
+            CreateCylinder("Generator Core", new Vector3(-15.1f, 2.5f, 4f), new Vector3(0.75f, 0.55f, 0.75f), cyanGlow, environment.transform);
+            CreateCube("Generator Hood", new Vector3(-15.2f, 3.4f, 4f), new Vector3(1.0f, 0.35f, 1.8f), dark, environment.transform);
 
             AudioSource leftAudio = leftGen.AddComponent<AudioSource>();
             leftAudio.clip = SpatialAudioUtility.GetPlasmaReactorClip();
@@ -225,13 +365,13 @@ namespace MiaShooterEditor
             leftAudio.maxDistance = 22.0f;
             leftAudio.volume = 0.35f;
 
-            // --- Right Wall 3D Sound Emitter: Quantum Data Relay ---
+            // --- Right Wall 3D Sound Emitter: Quantum Data Relay (Inside Hangar) ---
             GameObject rightRelay = new GameObject("Quantum Data Relay");
             rightRelay.transform.SetParent(environment.transform);
-            rightRelay.transform.position = new Vector3(13.4f, 2.5f, 15f);
-            CreateCube("Relay Base", new Vector3(13.4f, 1.2f, 15f), new Vector3(1.1f, 2.4f, 2.2f), dark, environment.transform);
-            CreateCube("Relay Screen", new Vector3(13.3f, 2.5f, 15f), new Vector3(0.12f, 0.85f, 1.4f), orangeGlow, environment.transform);
-            CreateCube("Relay Hood", new Vector3(13.4f, 3.4f, 15f), new Vector3(1.0f, 0.35f, 1.8f), dark, environment.transform);
+            rightRelay.transform.position = new Vector3(15.2f, 2.5f, 8f);
+            CreateCube("Relay Base", new Vector3(15.2f, 1.2f, 8f), new Vector3(1.1f, 2.4f, 2.2f), dark, environment.transform);
+            CreateCube("Relay Screen", new Vector3(15.1f, 2.5f, 8f), new Vector3(0.12f, 0.85f, 1.4f), orangeGlow, environment.transform);
+            CreateCube("Relay Hood", new Vector3(15.2f, 3.4f, 8f), new Vector3(1.0f, 0.35f, 1.8f), dark, environment.transform);
 
             AudioSource rightAudio = rightRelay.AddComponent<AudioSource>();
             rightAudio.clip = SpatialAudioUtility.GetQuantumRelayClip();
@@ -242,24 +382,64 @@ namespace MiaShooterEditor
             rightAudio.minDistance = 2.5f;
             rightAudio.maxDistance = 22.0f;
             rightAudio.volume = 0.30f;
+
+            // --- Outdoor Open-Air Ambient Audio Emitter ---
+            GameObject outdoorAtmosphere = new GameObject("Outdoor Wind Atmosphere");
+            outdoorAtmosphere.transform.SetParent(environment.transform);
+            outdoorAtmosphere.transform.position = new Vector3(0f, 6f, 55f);
+            AudioSource outdoorAudio = outdoorAtmosphere.AddComponent<AudioSource>();
+            outdoorAudio.clip = SpatialAudioUtility.GetOutdoorBreezeClip();
+            outdoorAudio.loop = true;
+            outdoorAudio.playOnAwake = true;
+            outdoorAudio.spatialBlend = 1.0f;
+            outdoorAudio.rolloffMode = AudioRolloffMode.Logarithmic;
+            outdoorAudio.minDistance = 15f;
+            outdoorAudio.maxDistance = 65f;
+            outdoorAudio.volume = 0.35f;
+        }
+
+        private static void BuildWatchtower(string name, Vector3 position, Material wallMat, Material darkMat, Transform parent)
+        {
+            GameObject tower = new GameObject(name);
+            tower.transform.SetParent(parent);
+            tower.transform.position = position;
+
+            float legOffset = 1.8f;
+            CreateCube("Leg 1", new Vector3(-legOffset, 4.5f, -legOffset), new Vector3(0.4f, 9f, 0.4f), darkMat, tower.transform, true);
+            CreateCube("Leg 2", new Vector3(legOffset, 4.5f, -legOffset), new Vector3(0.4f, 9f, 0.4f), darkMat, tower.transform, true);
+            CreateCube("Leg 3", new Vector3(-legOffset, 4.5f, legOffset), new Vector3(0.4f, 9f, 0.4f), darkMat, tower.transform, true);
+            CreateCube("Leg 4", new Vector3(legOffset, 4.5f, legOffset), new Vector3(0.4f, 9f, 0.4f), darkMat, tower.transform, true);
+
+            CreateCube("Platform", new Vector3(0f, 9.1f, 0f), new Vector3(4.5f, 0.3f, 4.5f), darkMat, tower.transform, true);
+            CreateCube("Cabin Roof", new Vector3(0f, 12f, 0f), new Vector3(4.8f, 0.25f, 4.8f), wallMat, tower.transform, true);
+            CreateCube("Railing", new Vector3(0f, 9.7f, 0f), new Vector3(4.4f, 0.9f, 4.4f), darkMat, tower.transform, true);
         }
 
         private static void BuildLighting()
         {
             GameObject lights = new GameObject("LIGHTING");
 
-            GameObject keyObject = new GameObject("Directional Light");
-            keyObject.transform.SetParent(lights.transform);
-            keyObject.transform.rotation = Quaternion.Euler(48f, -28f, 0f);
-            Light key = keyObject.AddComponent<Light>();
-            key.type = LightType.Directional;
-            key.color = new Color(0.55f, 0.68f, 1f);
-            key.intensity = 0.75f;
-            key.shadows = LightShadows.Soft;
+            // Outdoor Golden Sunlight
+            GameObject sunObject = new GameObject("Directional Sunlight");
+            sunObject.transform.SetParent(lights.transform);
+            sunObject.transform.rotation = Quaternion.Euler(46f, -32f, 0f);
+            Light sun = sunObject.AddComponent<Light>();
+            sun.type = LightType.Directional;
+            sun.color = new Color(1f, 0.94f, 0.86f);
+            sun.intensity = 1.15f;
+            sun.shadows = LightShadows.Soft;
 
-            CreatePointLight("Cyan Fill", new Vector3(-9f, 3f, 8f), new Color(0.05f, 0.75f, 1f), 7f, 15f, lights.transform);
-            CreatePointLight("Orange Fill", new Vector3(9f, 3f, 18f), new Color(1f, 0.24f, 0.04f), 6f, 15f, lights.transform);
-            CreatePointLight("Target Fill", new Vector3(0f, 6f, 25f), new Color(0.2f, 0.55f, 1f), 5f, 18f, lights.transform);
+            // Indoor Hangar Ambient Fill Lights
+            CreatePointLight("Indoor Hangar Fill", new Vector3(0f, 8f, -4f), new Color(0.45f, 0.65f, 0.85f), 4.5f, 26f, lights.transform);
+            CreatePointLight("Indoor Gate Amber Fill", new Vector3(0f, 7.5f, 19f), new Color(1f, 0.65f, 0.15f), 4.0f, 18f, lights.transform);
+
+            // Side Emitter Glows
+            CreatePointLight("Cyan Generator Glow", new Vector3(-13.5f, 3f, 4f), new Color(0.05f, 0.75f, 1f), 6f, 14f, lights.transform);
+            CreatePointLight("Orange Relay Glow", new Vector3(13.5f, 3f, 8f), new Color(1f, 0.35f, 0.05f), 5f, 14f, lights.transform);
+
+            // Outdoor Field Lights
+            CreatePointLight("Outdoor Yard Fill Mid", new Vector3(0f, 7f, 45f), new Color(0.85f, 0.92f, 1f), 3.5f, 35f, lights.transform);
+            CreatePointLight("Outdoor Yard Fill Far", new Vector3(0f, 8f, 75f), new Color(0.85f, 0.92f, 1f), 4.0f, 40f, lights.transform);
         }
 
         private static void BuildTargets(Material cyan, Material orange, Material dark, AudioClip hit, AudioClip explosion)
@@ -267,12 +447,14 @@ namespace MiaShooterEditor
             GameObject targets = new GameObject("TARGETS");
             Vector3[] positions =
             {
-                new Vector3(-7f, 1.6f, 11f),
-                new Vector3(0f, 1.6f, 13f),
-                new Vector3(7f, 1.6f, 15f),
-                new Vector3(-5f, 2.1f, 21f),
-                new Vector3(5f, 2.1f, 23f),
-                new Vector3(0f, 2.5f, 27.5f)
+                new Vector3(-6f, 1.6f, 6f),     // Target 1: Indoor Left (Cyan)
+                new Vector3(0f, 1.6f, 11f),     // Target 2: Indoor Center Mover (Orange - verified in Test 4)
+                new Vector3(6f, 1.6f, 8f),      // Target 3: Indoor Right (Cyan)
+                new Vector3(0f, 2.2f, 16f),     // Target 4: Indoor Platform (Orange)
+                new Vector3(0f, 2.0f, 32f),     // Target 5: Outdoor Mover (Cyan)
+                new Vector3(-10f, 2.2f, 46f),   // Target 6: Outdoor Behind Left Container (Orange)
+                new Vector3(12f, 2.2f, 55f),    // Target 7: Outdoor Right Bunker (Cyan)
+                new Vector3(0f, 3.8f, 78f)      // Target 8: Outdoor Far Sniper Platform (Orange)
             };
 
             for (int i = 0; i < positions.Length; i++)
@@ -281,10 +463,15 @@ namespace MiaShooterEditor
                 GameObject target = CreateTarget($"Target {i + 1}", positions[i], accent, dark, targets.transform);
                 target.GetComponent<ShootableTarget>().Configure(hit, explosion);
 
-                if (i == 1 || i == 4)
+                if (i == 1) // Target 2 (Indoor Mover)
                 {
                     TargetMover mover = target.AddComponent<TargetMover>();
-                    mover.Configure(new Vector3(i == 1 ? 2.4f : -2.2f, 0f, 0f), i == 1 ? 1.15f : 0.85f);
+                    mover.Configure(new Vector3(2.4f, 0f, 0f), 1.15f);
+                }
+                else if (i == 4) // Target 5 (Outdoor Mover)
+                {
+                    TargetMover mover = target.AddComponent<TargetMover>();
+                    mover.Configure(new Vector3(-4.0f, 0f, 0f), 0.95f);
                 }
             }
         }
@@ -337,7 +524,7 @@ namespace MiaShooterEditor
             Camera camera = cameraObject.AddComponent<Camera>();
             camera.fieldOfView = 68f;
             camera.nearClipPlane = 0.05f;
-            camera.farClipPlane = 120f;
+            camera.farClipPlane = 180f;
             cameraObject.AddComponent<AudioListener>();
             CameraShake shake = cameraObject.AddComponent<CameraShake>();
 
@@ -491,11 +678,15 @@ namespace MiaShooterEditor
             ambientSource.spatialBlend = 0f;
         }
 
-        private static void CreateTitleText(Transform parent)
+        private static void CreateTitleText(Transform parent, Vector3 position = default)
         {
+            if (position == default)
+            {
+                position = new Vector3(0f, 7.3f, 19.2f);
+            }
             GameObject title = new GameObject("Arena Title");
             title.transform.SetParent(parent);
-            title.transform.position = new Vector3(0f, 7.1f, 28.75f);
+            title.transform.position = position;
             title.transform.rotation = Quaternion.identity;
             TextMesh text = title.AddComponent<TextMesh>();
             text.text = "SOUND + VFX LAB";

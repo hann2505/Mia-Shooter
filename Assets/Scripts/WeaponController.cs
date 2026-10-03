@@ -330,6 +330,13 @@ namespace MiaShooter
                 weaponAudio.pitch = Random.Range(0.96f, 1.04f);
             }
             PlayOneShot(gunshotClip, 0.9f);
+
+            // Pronounced acoustic slapback reflections when shooting indoors (hangar complex)
+            if (transform.position.z < 20.5f)
+            {
+                StartCoroutine(IndoorSlapbackEchoRoutine(gunshotClip, 0.9f));
+            }
+
             cameraShake?.Play(0.09f, 0.035f);
             StartCoroutine(RecoilRoutine());
             VfxUtility.SpawnMuzzleFlash(muzzle.position, muzzle.forward);
@@ -819,6 +826,28 @@ namespace MiaShooter
             if (!isReloading)
             {
                 weaponRoot.localPosition = weaponRestPosition;
+            }
+        }
+
+        private IEnumerator IndoorSlapbackEchoRoutine(AudioClip clip, float baseVolume)
+        {
+            if (weaponAudio == null || clip == null)
+            {
+                yield break;
+            }
+
+            // Early acoustic slapback bounce (~65ms delay bouncing off hangar walls & roof)
+            yield return new WaitForSeconds(0.062f);
+            if (weaponAudio != null && clip != null)
+            {
+                weaponAudio.PlayOneShot(clip, baseVolume * 0.42f);
+            }
+
+            // Secondary reflection (~135ms delay bouncing off far rear steel partitions)
+            yield return new WaitForSeconds(0.072f);
+            if (weaponAudio != null && clip != null)
+            {
+                weaponAudio.PlayOneShot(clip, baseVolume * 0.20f);
             }
         }
 

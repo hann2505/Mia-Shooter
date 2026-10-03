@@ -188,5 +188,43 @@ namespace MiaShooter
             cachedProbePing.SetData(data, 0);
             return cachedProbePing;
         }
+
+        private static AudioClip cachedOutdoorBreeze;
+
+        /// <summary>
+        /// Natural open-air wind breeze atmospheric loop for the outdoor proving grounds.
+        /// </summary>
+        public static AudioClip GetOutdoorBreezeClip()
+        {
+            if (cachedOutdoorBreeze != null) return cachedOutdoorBreeze;
+
+            int sampleRate = 44100;
+            float duration = 3.5f;
+            int samples = Mathf.CeilToInt(sampleRate * duration);
+            float[] data = new float[samples];
+
+            // Filtered brown/pink noise generator with slow gust modulation
+            float lastVal = 0f;
+            for (int i = 0; i < samples; i++)
+            {
+                float t = (float)i / sampleRate;
+                float gust = 0.55f + 0.35f * Mathf.Sin(2f * Mathf.PI * 0.28f * t) + 0.15f * Mathf.Sin(2f * Mathf.PI * 0.72f * t);
+                float white = UnityEngine.Random.value * 2f - 1f;
+                // Simple 1-pole lowpass filter for deep wind rumble
+                lastVal = Mathf.Lerp(lastVal, white, 0.045f);
+
+                // Seamless looping fade edges
+                float edgeFade = 1f;
+                float edgeSamples = sampleRate * 0.08f;
+                if (i < edgeSamples) edgeFade = (float)i / edgeSamples;
+                else if (i > samples - edgeSamples) edgeFade = (float)(samples - i) / edgeSamples;
+
+                data[i] = lastVal * gust * edgeFade * 0.42f;
+            }
+
+            cachedOutdoorBreeze = AudioClip.Create("OutdoorBreezeAtmosphere", samples, 1, sampleRate, false);
+            cachedOutdoorBreeze.SetData(data, 0);
+            return cachedOutdoorBreeze;
+        }
     }
 }

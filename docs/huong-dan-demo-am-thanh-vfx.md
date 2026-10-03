@@ -15,32 +15,31 @@ Nếu cần tạo lại scene, chọn menu `Tools > Mia Shooter > Build Sound & 
 
 ## Nội dung đáp ứng yêu cầu
 
-### Hiệu ứng âm thanh & Không gian hóa 3D chân thực (3D Spatial Audio Architecture)
+### Hiệu ứng âm thanh & Phân vùng âm học Trong Nhà - Ngoài Trời (Indoor vs Outdoor 3D Acoustics)
 
-Game ứng dụng hệ thống không gian hóa âm thanh 3D toàn diện (Full 3D Spatial Audio Pipeline), tối ưu cho trải nghiệm tai nghe (Headphones) với khả năng định vị phương vị (Binaural Panning), suy giảm khoảng cách vật lý (Distance Rolloff), phản hồi vang dội kiến trúc (Acoustic Reverb) và hiệu ứng Doppler biến điệu cao độ thời gian thực:
+Game ứng dụng hệ thống không gian hóa âm thanh 3D toàn diện (Full 3D Spatial Audio Pipeline) với sự phân hóa âm học triệt để giữa **Khu Trong Nhà (Hangar)** và **Khu Ngoài Trời (Proving Grounds)**:
 
+- **Âm học Trong Nhà: Vang dội Hangar mạnh mẽ (Indoor Cavernous Hangar Reverb & Slapback Echo)**:
+  - *Vùng vang dội phòng kín (`AudioReverbZone` Hangar)*: Được định vị tại trung tâm nhà xưởng (`z = -4m`), áp dụng preset `Hangar` với thời gian suy giảm vang dội kéo dài tới **4.2 giây** (`decayTime = 4.2s`), hệ số phản hồi sớm mạnh mẽ (`reflections = -300 mB`), độ trễ phản xạ ban đầu (`reflectionsDelay = 0.025s`) và âm vang hậu kỳ cao (`reverb = +250 mB`). Mọi âm thanh tiếng súng, tiếng bước chân, nạp đạn và nổ bia đều dội vang rền qua các bức tường bê tông và trần kim loại.
+  - *Hiệu ứng phản xạ âm tức thời khi khai hỏa (`IndoorSlapbackEchoRoutine`)*: Khi người chơi đứng trong nhà xưởng (`z < 20.5m`), mỗi phát bắn thường hoặc bắn đạn rỗng sẽ kích hoạt hai đợt phản xạ âm vật lý: đợt phản xạ sớm ở mốc `+62ms` (sóng âm dội từ trần và vách hai bên) và đợt phản xạ thứ hai ở mốc `+134ms` (sóng âm dội từ vách sau nhà xưởng), tạo nên cảm giác tiếng súng đanh thép, dội vang cực kỳ chân thực như trong các tựa game FPS chiến thuật đỉnh cao.
+- **Âm học Ngoài Trời: Không gian mở khô gọn & Thoáng đãng (Outdoor Open-Air Dry Acoustics)**:
+  - *Vùng âm học ngoài trời (`AudioReverbZone` Plain)*: Được định vị tại khu vực sân tập dã chiến (`z = +58m`), áp dụng preset `Plain` với thời gian dội âm tối thiểu **0.4 giây** (`decayTime = 0.4s`) và triệt tiêu hầu hết sóng phản xạ (`reflections = -2000 mB`). Tiếng súng khi bắn ngoài trời lập tức trở nên đanh gọn, sắc nét, không bị dội tường mà tiêu tán trực tiếp vào bầu không khí tự nhiên.
+  - *Âm thanh môi trường gió ngoài trời thủ tục (`GetOutdoorBreezeClip`)*: Khi bước ra khỏi cửa hangar, người chơi sẽ nghe thấy âm thanh tiếng gió thổi rì rào trong không gian mở phát ra từ nguồn âm 3D tại sân tập.
 - **Binaural Stereo Panning & 100% Spatial Blend**:
   - Toàn bộ nguồn phát âm thanh trong thế giới (tiếng súng va chạm, bia nổ, máy phát năng lượng, mục tiêu di động, lựu đạn) đều được cấu hình `spatialBlend = 1.0f` (100% 3D World Space), `spread = 0°` giúp tai người nghe nhận biết tức thì hướng nguồn âm (trái, phải, trước, sau).
 - **Đường cong suy giảm âm lượng logarit chuẩn hóa (`SpatialAudioUtility`)**:
-  - Khắc phục giới hạn mặc định của `AudioSource.PlayClipAtPoint` (vốn có `maxDistance = 500m` triệt tiêu cảm giác xa gần trong phòng kín), lớp tiện ích [`SpatialAudioUtility`](file:///Users/nc/Develop/Game/Mia%20Shooter/Assets/Scripts/SpatialAudioUtility.cs) áp dụng đường cong suy giảm Logarithmic tùy chỉnh với cự ly thực tế (`minDistance = 2.0m - 3.5m`, `maxDistance = 25m - 40m`). Người chơi khi di chuyển lại gần hoặc ra xa sẽ cảm nhận sự thay đổi âm lượng rõ rệt.
-- **Vùng vang dội âm học phòng tập (`AudioReverbZone`)**:
-  - Khu vực đấu trường được bao bọc bởi một `AudioReverbZone` kiến trúc phòng kín (Room preset, `minDistance = 6m`, `maxDistance = 50m`), mô phỏng hiện tượng phản xạ sóng âm trên các vách tường bê tông và kim loại, mang lại chiều sâu không gian chân thực.
+  - Khắc phục giới hạn mặc định của `AudioSource.PlayClipAtPoint` (vốn có `maxDistance = 500m` triệt tiêu cảm giác xa gần trong phòng kín), lớp tiện ích [`SpatialAudioUtility`](file:///Users/nc/Develop/Game/Mia%20Shooter/Assets/Scripts/SpatialAudioUtility.cs) áp dụng đường cong suy giảm Logarithmic tùy chỉnh với cự ly thực tế (`minDistance = 2.0m - 3.5m`, `maxDistance = 25m - 65m`). Người chơi khi di chuyển lại gần hoặc ra xa sẽ cảm nhận sự thay đổi âm lượng rõ rệt.
 - **Hiệu ứng Doppler trên các mục tiêu cơ động (`TargetMover`)**:
-  - Các bia bay cơ động (Target 2 và Target 5) được tích hợp `AudioSource` 3D phát tiếng động cơ servo thủ tục (`GetServoHumClip`). Khi mục tiêu di chuyển qua lại trước mặt người chơi, hệ thống tự động tính toán vận tốc và áp dụng hiệu ứng Doppler (`dopplerLevel = 1.8f`), khiến cao độ âm thanh tăng lên khi bia tiến lại gần và trầm xuống khi bia lướt ra xa.
-- **Nguồn phát âm thanh môi trường định vị 2 bên vách tường (Ambient Spatial Emitters)**:
-  - *Vách tường trái (X = -13.5m)*: Máy phát năng lượng Plasma (`Plasma Power Generator`) với ánh sáng cyan và âm thanh rền trầm sub-bass 55Hz kèm sóng hài điện tử 110Hz.
-  - *Vách tường phải (X = +13.5m)*: Trạm chuyển tiếp dữ liệu lượng tử (`Quantum Data Relay`) với ánh sáng cam hổ phách và âm thanh truyền dữ liệu số tần số cao (digital chirps & telemetry relay).
-  - Khi người chơi đứng ở giữa, hai tai sẽ nghe thấy hai âm thanh môi trường hoàn toàn tách biệt; khi xoay đầu hoặc đi sát vào từng tường, âm lượng bên tai tương ứng sẽ đạt cực đại.
+  - Bia bay cơ động trong nhà (Target 2) và ngoài trời (Target 5) được tích hợp `AudioSource` 3D phát tiếng động cơ servo thủ tục (`GetServoHumClip`). Khi mục tiêu di chuyển qua lại trước mặt người chơi, hệ thống tự động tính toán vận tốc và áp dụng hiệu ứng Doppler (`dopplerLevel = 1.8f`), khiến cao độ âm thanh tăng lên khi bia tiến lại gần và trầm xuống khi bia lướt ra xa.
+- **Nguồn phát âm thanh môi trường định vị 2 bên vách nhà xưởng (Ambient Spatial Emitters)**:
+  - *Vách tường trái (X = -15.2m)*: Máy phát năng lượng Plasma (`Plasma Power Generator`) với ánh sáng cyan và âm thanh rền trầm sub-bass 55Hz kèm sóng hài điện tử 110Hz.
+  - *Vách tường phải (X = +15.2m)*: Trạm chuyển tiếp dữ liệu lượng tử (`Quantum Data Relay`) với ánh sáng cam hổ phách và âm thanh truyền dữ liệu số tần số cao (digital chirps & telemetry relay).
 - **Đầu dò âm thanh 3D xoay 360° thử nghiệm tương tác (`SpatialAudioProbe`)**:
-  - Nhấn phím `T` bất kỳ lúc nào hoặc bấm nút `[ 🎧 THỬ ÂM THANH 3D XOAY 360° ]` trong tab Âm thanh của Menu Cài đặt để kích hoạt đầu dò âm thanh 3D.
-  - Một nguồn phát âm thanh ảo sẽ bay theo quỹ đạo hình tròn bán kính 3.8m quanh tai người chơi với tốc độ 48°/giây, phát ra các tiếng chuông sonar 3D đều đặn mỗi 0.62 giây (`GetProbePingClip`).
-  - Trên màn hình xuất hiện thẻ đo lường viễn trắc HUD hiển thị góc phương vị thời gian thực (Azimuth Angle từ -180° đến +180°), khoảng cách và tỷ lệ cân bằng âm lượng hai tai L/R để người chơi kiểm chứng khả năng panning 3D.
+  - Nhấn phím `T` bất kỳ lúc nào hoặc bấm nút `[ 🎧 THỬ ÂM THANH 3D XOAY 360° ]` trong tab Âm thanh của Menu Cài đặt để kích hoạt đầu dò âm thanh 3D (bán kính 3.8m quanh đầu người chơi, chuông sonar A5 880Hz mỗi 0.62 giây).
 - **Chỉ báo hướng âm thanh 3D trên tâm ngắm (Directional Audio Cues)**:
-  - Khi các âm thanh 3D quan trọng phát ra xung quanh (tiếng nổ, tiếng va chạm, tiếng probe ping), HUD tự động hiển thị các cung vòng hoặc mũi tên chỉ hướng xung quanh tâm ngắm crosshair, hướng dẫn trực quan vị trí phát ra âm thanh.
+  - Khi các âm thanh 3D phát ra xung quanh (tiếng nổ, tiếng va chạm, tiếng probe ping), HUD tự động hiển thị các cung vòng hoặc mũi tên chỉ hướng xung quanh tâm ngắm crosshair.
 - **Âm thanh vũ khí & gameplay chất lượng cao**:
   - Bốn âm thanh gameplay cơ bản `gunshot`, `reload`, `footstep` và `land` cùng âm thanh khai hỏa chùm năng lượng `laser` được nạp trực tiếp từ `Assets/Resources/Audio` khi vào Play Mode.
-  - Âm thanh bắn laser sử dụng file `Assets/Audio/laser.mp3` (`Assets/Resources/Audio/laser.mp3`): tích hợp qua `AudioSource` 2D chuyên dụng chạy lặp (`loop = true`) liên tục trong suốt thời gian giữ chuột phải, tự động biến điệu cao độ (dynamic pitch modulation) dao động nhẹ theo luồng plasma và dừng ngay lập tức khi nhả chuột hoặc cạn kiệt pin năng lượng.
-  - Tiếng súng, nạp đạn, bước chân và laser sử dụng asset MP3; hiệu ứng tiếp đất MP3 chỉ phát sau khi người chơi thực sự rơi đủ nhanh.
 
 ### Hiệu ứng đặc biệt
 
@@ -155,25 +154,62 @@ Game ứng dụng hệ thống không gian hóa âm thanh 3D toàn diện (Full 
     - Hộp chọn bật/tắt rung chấn màn hình (`Screen Shake`).
     - Thanh trượt độ phóng đại tâm ngắm và tùy chọn ẩn/hiện phím gợi ý trên màn hình.
 
+### Thiết kế Bản đồ Mở rộng: Khu phức hợp Trong Nhà & Bãi tập Ngoài Trời (Expanded Map Architecture)
+
+Nhằm đáp ứng trải nghiệm âm học không gian và quy mô chiến thuật, bản đồ phòng tập đã được mở rộng mạnh mẽ từ diện tích nhỏ hẹp ban đầu thành một đại tổ hợp căn cứ huấn luyện dài **~125 mét**, rộng **52 mét**, chia tách rõ rệt giữa hai phân khu:
+
+- **Nhà Xưởng Bắn Trong Nhà (Indoor Firing Hangar - z = -28m đến +20m)**:
+  - *Quy mô*: Chiều dài 48 mét, chiều rộng 32 mét, trần bê tông - kim loại cao 10.5 mét.
+  - *Kết cấu công nghiệp*: 10 cột trụ bê tông chịu lực kiên cố chạy dọc hai vách tường, hệ thống 5 dàn vì kèo thép trần vắt ngang (Overhead Cross-Trusses) và 8 cụm đèn tuýp huỳnh quang công nghiệp phát quang ấm cúng treo lơ lửng.
+  - *Phòng điều hành tác chiến trên cao (Control Room)*: Bố trí ở vách sau với khung cửa sổ kính viễn tưởng vát cạnh, phát ánh sáng màn hình giám sát quan sát toàn cảnh phòng bắn.
+  - *Cổng sập an ninh kiên cố (Blast Doors)*: Bố trí ở vách sau tạo chiều sâu kiến trúc căn cứ.
+  - *Sàn đấu & Chỉ dẫn chiến thuật*: Sàn bê tông công nghiệp với 4 đường ray năng lượng phát quang cyan chạy dọc, bệ bắn trung tâm (Shooting Deck) và các rào chắn bê tông che chắn.
+  - *Mục tiêu trong nhà (4 bia)*: Target 1 (Bia tầm gần 6m), Target 2 (Bia bay cơ động Doppler lướt ngang ở 12m), Target 3 (Bia tầm trung bên trái 18m) và Target 4 (Bia tầm xa trong nhà 24m).
+- **Cổng Vòm Phân Ranh Tác Chiến (Hangar Blast Gate - z = +20m)**:
+  - *Cổng thép khổng lồ*: Rộng 18 mét, cao 10.5 mét phân định ranh giới chuyển tiếp vật lý và âm học giữa trong nhà và ngoài trời.
+  - *Chỉ dấu an toàn chiến thuật*: Hai trụ cổng và gờ ngưỡng sàn được sơn vạch sọc vàng/đen cảnh báo nguy hiểm (Yellow/Black Hazard Warning Stripes) kèm đèn xoay chớp nháy màu hổ phách (Amber Strobe Warning Lights).
+  - *Biển hiệu phát quang*: Biển hiệu viễn tưởng `SOUND + VFX LAB` gắn chính giữa xà ngang cổng vòm.
+  - *Chỉ báo HUD thời gian thực*: Khi người chơi bước qua mốc `z = 20.5m`, HUD tự động kích hoạt thông báo chuyển vùng tác chiến (Transition Toast) mượt mà.
+- **Bãi Tập Dã Chiến Ngoài Trời (Outdoor Proving Grounds - z = +20m đến +95m)**:
+  - *Quy mô*: Chiều dài 75 mét, chiều rộng 52 mét mở toang dưới bầu trời thoáng đãng.
+  - *Chiếu sáng tự nhiên*: Ánh nắng mặt trời vàng ấm (Directional Sunlight) với bóng đổ mềm mại, thay thế hoàn toàn ánh đèn huỳnh quang trong nhà.
+  - *Mặt sân & Vạch cự ly*: Mặt sân tarmac dã chiến với các vạch mốc cự ly tiêu chuẩn tác chiến quân sự: `25M`, `50M` và `75M`.
+  - *Bãi container tiếp vận quân sự*: Các khối container hàng hải chuẩn kích thước (xanh quân đội, cam cứu hộ, xanh biển) được xếp so le và xếp tầng tạo công sự che chắn và chướng ngại vật chiến thuật.
+  - *Rào chắn bê tông dã chiến (Jersey Barriers)*: Bố trí tại các tuyến ngắm bắn ngoài trời.
+  - *Tháp canh gác tầm cao (Sniper Watchtowers)*: Hai tháp canh thép kiên cố ở hai góc sân sau (`z = 90m`) tạo điểm nhấn kiến trúc và vị trí bắn tỉa.
+  - *Mục tiêu dã chiến ngoài trời (4 bia)*: Target 5 (Bia bay cơ động sân tập 38m), Target 6 (Bia sau chướng ngại vật container bên phải 42m), Target 7 (Bia tầm xa sau bãi hàng bên trái 58m) và Target 8 (Bia bắn tỉa trên đỉnh tháp canh cự ly cực xa 78m). Tổng số lượng bia mục tiêu nâng lên **8 bia**.
+
 ## Các script chính
 
 - `FirstPersonController.cs`: di chuyển, nhìn, phát tiếng bước chân, kết nối với `GameSettings`, phím tắt `T` bật/tắt đầu dò âm thanh 3D và xử lý mở/đóng menu cài đặt.
-- `SpatialAudioUtility.cs`: trung tâm xử lý không gian hóa âm thanh 3D, áp dụng đường cong suy giảm logarit chuẩn hóa (`PlayClipAtPoint3D`), bộ tổng hợp âm thanh thủ tục (servo hum, plasma generator, quantum relay, probe ping) và kích hoạt sự kiện chỉ báo hướng âm thanh HUD.
+- `SpatialAudioUtility.cs`: trung tâm xử lý không gian hóa âm thanh 3D, áp dụng đường cong suy giảm logarit chuẩn hóa (`PlayClipAtPoint3D`), bộ tổng hợp âm thanh thủ tục (servo hum, plasma generator, quantum relay, probe ping, outdoor breeze) và kích hoạt sự kiện chỉ báo hướng âm thanh HUD.
 - `SpatialAudioProbe.cs`: module kiểm thử âm thanh 3D xoay 360 độ, điều khiển nguồn phát âm thanh ảo bay quanh đầu người chơi theo chu kỳ, tính toán góc phương vị azimuth và tỷ lệ pan hai tai stereo thời gian thực.
 - `TargetMover.cs`: điều khiển chuyển động dao động của bia bay cơ động, tích hợp `AudioSource` 3D tiếng động cơ servo thủ tục và biến điệu cao độ Doppler thời gian thực (`dopplerLevel = 1.8f`).
-- `WeaponController.cs`: raycast bắn súng, băng đạn 12 viên, nạp đạn, recoil, âm thanh, rung camera, muzzle flash, tracer, cơ chế tích sạc laser, điều khiển màn hình năng lượng thân súng, chùm laser aura đa tầng cùng hệ thống đèn chiếu hào quang họng súng và điểm chạm, tôn trọng cấu hình phím từ `GameSettings`.
+- `WeaponController.cs`: raycast bắn súng, băng đạn 12 viên, nạp đạn, recoil, âm thanh, rung camera, muzzle flash, tracer, cơ chế tích sạc laser, điều khiển màn hình năng lượng thân súng, chùm laser aura đa tầng cùng hệ thống đèn chiếu hào quang họng súng và điểm chạm, xử lý dội âm cơ học trong nhà (`IndoorSlapbackEchoRoutine` với 2 xung phản xạ +62ms và +134ms), tôn trọng cấu hình phím từ `GameSettings`.
 - `GameSettings.cs`: quản lý tập trung toàn bộ cấu hình trò chơi, lưu trữ `PlayerPrefs`, xử lý đổi phím (key rebinding), âm lượng, độ nhạy chuột và trạng thái modal cài đặt.
-- `DemoHud.cs`: HUD giao diện viễn tưởng thế hệ mới (module súng, đạn pips, thanh năng lượng, sinh trắc học, bảng điểm), hệ thống tâm ngắm thông minh đa chế độ và modal Menu Cài Đặt tương tác 3 tab.
+- `DemoHud.cs`: HUD giao diện viễn tưởng thế hệ mới (module súng, đạn pips, thanh năng lượng, sinh trắc học, bảng điểm, theo dõi phân vùng âm học trong nhà/ngoài trời thời gian thực kèm banner chuyển vùng), hệ thống tâm ngắm thông minh đa chế độ và modal Menu Cài Đặt tương tác 3 tab.
 - `GrenadeThrower.cs`, `GrenadeThrowAnimation.cs` và `GrenadeProjectile.cs`: animation tay ném, tạo projectile theo hướng nhìn, xử lý va chạm, sát thương và vụ nổ, điều khiển bằng phím gán trong `GameSettings`.
 - `ShootableTarget.cs`: nhận sát thương, hiệu ứng trúng đạn, nổ, kích hoạt hiệu ứng kết liễu điện ảnh và hồi sinh.
 - `VfxUtility.cs`: tạo particle, ánh sáng, tracer, vụ nổ, khói thể tích, hiệu ứng kết liễu mục tiêu đa tầng, âm thanh chuông kết liễu thủ tục và mảnh vỡ tại runtime.
-- `SoundVfxDemoBuilder.cs`: dựng lại toàn bộ scene, kiểm tra asset và tự động tạo mô hình súng kèm màn hình hiển thị năng lượng.
+- `SoundVfxDemoBuilder.cs`: dựng lại toàn bộ scene với bản đồ mở rộng quy mô lớn (Hangar trong nhà 48m x 32m x 10.5m, Cổng Blast Gate và Bãi tập ngoài trời 75m x 52m), cấu hình 2 vùng vang dội âm học Reverb Zone (Hangar vs Plain), kiểm tra asset và tự động tạo mô hình súng kèm màn hình hiển thị năng lượng.
 
 ## Gợi ý thuyết trình
 
-1. Đứng xa một bia rồi tiến lại gần để minh họa attenuation của âm thanh 3D.
+1. **Khám phá Bản đồ Mở rộng & Phân vùng Âm học (Khuyên dùng tai nghe Stereo/Headphones)**:
+   - **Thử nghiệm tiếng súng Trong Nhà (Indoor Hangar Reverb & Slapback Echo)**:
+     - Khi vừa vào trận, người chơi đứng bên trong nhà xưởng (`z = 0m`). Nhìn lên trên để thấy trần kim loại cao 10.5m, các vì kèo thép và đèn huỳnh quang công nghiệp; nhìn hai bên là hàng cột bê tông kiên cố.
+     - Khai hỏa súng thường hoặc bắn đạn rỗng: Lắng nghe tiếng súng dội vang rền đặc trưng của nhà xưởng kín với **2 đợt phản xạ âm vật lý tức thì (slapback echoes ở +62ms và +134ms)** cùng **đuôi vang dội kéo dài tới 4.2 giây** từ vùng `AudioReverbZone` Hangar. Tiếng súng tạo cảm giác uy lực, chói lòa và dội qua lại giữa các vách tường.
+     - Quan sát góc trên của HUD hiển thị trạng thái phân vùng: `[ 🏢 TRONG NHÀ  •  VANG DỘI HANGAR 4.2S ]`.
+   - **Bước qua Cổng Phân Ranh Tác Chiến (Blast Gate Transition)**:
+     - Di chuyển về phía trước qua cổng vòm thép kiên cố rộng 18m với vạch sơn an toàn vàng/đen và đèn chớp hổ phách (mốc `z = 20.5m`).
+     - Ngay khi bước qua cổng, quan sát biểu ngữ thông báo chuyển vùng (Transition Toast) trượt ra mượt mà: `[ ☀️ RA NGOÀI TRỜI: KHÔNG GIAN MỞ (DRY) ]`.
+   - **Thử nghiệm tiếng súng Ngoài Trời (Outdoor Open-Air Dry Acoustics)**:
+     - Đứng giữa bãi tập dã chiến rộng lớn dưới bầu trời và ánh nắng tự nhiên. Lắng nghe tiếng gió rì rào hiu hiu (`GetOutdoorBreezeClip`) phát ra từ không gian mở.
+     - Khai hỏa súng thường hoặc bắn laser: Lập tức nhận thấy tiếng súng trở nên **đanh gọn, sắc bén, khô ráo (Dry Acoustics)**. Không còn tiếng dội tường kéo dài mà sóng âm tiêu tán tự nhiên vào không khí thoáng đãng (vùng `AudioReverbZone` Plain với độ suy giảm chỉ 0.4s).
+     - Bắn thử các mục tiêu dã chiến ngoài trời: Bia bay di động Target 5 ở 38m, các bia ẩn sau bãi container (Target 6, Target 7) và bia bắn tỉa cự ly xa Target 8 trên đỉnh tháp canh cách 78 mét.
 2. Trình bày **Giao diện HUD viễn tưởng thế hệ mới**:
    - Chỉ vào huy hiệu Hologram chiến thuật ở góc trên bên trái (`✦ MIA // LABS TACTICAL SUITE`).
+   - Giới thiệu thanh trạng thái âm học trung tâm theo dõi vị trí người chơi và bộ đếm bia `08 / 08 TARGETS`.
    - Giới thiệu module sinh trắc học ở góc dưới bên trái với các thanh Khiên (Shield) và Giáp (Armor) phân đoạn sắc nét.
    - Giới thiệu module vũ khí ở góc dưới bên phải với bộ đếm đạn số lớn `12 / 12`, 12 đèn LED pips đạn chiến thuật tự động tắt khi bắn, và thanh năng lượng laser dải màu nóng đỏ-cam.
 3. Bấm phím `ESC` hoặc click nút `[ ⚙ CÀI ĐẶT ]` ở góc trên bên phải HUD để mở **Menu Cài Đặt tương tác**:
@@ -193,9 +229,9 @@ Game ứng dụng hệ thống không gian hóa âm thanh 3D toàn diện (Full 
 10. Giữ chuột phải để khai hỏa tia laser: trình bày tia laser kép với chùm hào quang cam lửa rực cháy dọc thẳng tắp trục nòng súng, ánh sáng hào quang họng súng chiếu sáng rực rỡ và ánh sáng điểm chạm tại mục tiêu, trong khi màn hình năng lượng trên thân súng và thanh HUD giảm dần chân thực.
 11. Nhấn `G` (hoặc phím đã gán), quan sát nhân vật cầm lựu đạn, click chuột trái để ném và theo dõi vụ nổ siêu uy lực cùng cột khói nấm cuồn cuộn.
 12. Nhấn `H` (hoặc phím đã gán), click chuột trái để ném bom khói và quan sát đám khói 4 tầng lan rộng, tồn tại trong nhiều giây.
-13. **Trải nghiệm Không gian hóa Âm thanh 3D (Khuyên dùng tai nghe Stereo/Headphones)**:
+13. **Trải nghiệm Không gian hóa Âm thanh 3D Nâng cao**:
     - **Thử nghiệm Đầu dò xoay 360° (Phím T)**: Nhấn phím `T` để bật đầu dò âm thanh 3D. Quan sát thẻ viễn trắc ở cạnh trên HUD hiển thị góc phương vị (Azimuth Angle) và tỷ lệ phân bổ L/R stereo pan. Lắng nghe tiếng chuông 3D xoay vòng mượt mà 360° từ trước mặt sang tai phải, vòng ra sau gáy, sang tai trái rồi trở lại trước mặt. Nhấn `T` lần nữa để tắt.
-    - **Phân tách âm thanh môi trường 2 bên vách**: Di chuyển sang sát vách tường bên trái cạnh máy phát Plasma (`Plasma Power Generator`) để nghe tiếng rền sub-bass 55Hz cực đại ở tai trái. Sau đó di chuyển sang vách tường bên phải cạnh trạm chuyển tiếp lượng tử (`Quantum Data Relay`) để nghe chuỗi tín hiệu số tần số cao ở tai phải. Quay đầu 180° để cảm nhận vị trí âm thanh đảo chiều tức thì giữa hai tai.
-    - **Hiệu ứng Doppler trên bia bay di động**: Đứng quan sát bia Target 2 (hoặc Target 5) bay ngang qua lại. Lắng nghe tiếng động cơ servo tự động tăng cao độ (pitch vút lên) khi bia đang bay hướng về phía người chơi và hạ trầm xuống khi bia lướt xa dần.
-    - **Độ suy giảm âm lượng theo khoảng cách & Vang dội phòng kín (Acoustic Reverb)**: Đứng ở cửa phòng tập bắn một bia ở xa (Target 4 hoặc Target 8 cự ly 24m) so với bắn bia ở cự ly gần (Target 1 cự ly 6m) để nghe sự khác biệt rõ nét về độ vang phòng (`AudioReverbZone`), âm lượng suy giảm logarit và độ trễ phản hồi không gian.
+    - **Phân tách âm thanh môi trường 2 bên vách nhà xưởng**: Di chuyển sang sát vách tường bên trái cạnh máy phát Plasma (`Plasma Power Generator`) để nghe tiếng rền sub-bass 55Hz cực đại ở tai trái. Sau đó di chuyển sang vách tường bên phải cạnh trạm chuyển tiếp lượng tử (`Quantum Data Relay`) để nghe chuỗi tín hiệu số tần số cao ở tai phải. Quay đầu 180° để cảm nhận vị trí âm thanh đảo chiều tức thì giữa hai tai.
+    - **Hiệu ứng Doppler trên bia bay di động**: Đứng quan sát bia Target 2 (trong nhà) hoặc Target 5 (ngoài bãi tập) bay ngang qua lại. Lắng nghe tiếng động cơ servo tự động tăng cao độ (pitch vút lên) khi bia đang bay hướng về phía người chơi và hạ trầm xuống khi bia lướt xa dần.
+
 

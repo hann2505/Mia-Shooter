@@ -46,6 +46,9 @@ namespace MiaShooter
         }
 
         private readonly List<SoundCue> activeSoundCues = new List<SoundCue>();
+        private FirstPersonController playerController;
+        private bool lastWasIndoors = true;
+        private float lastZoneTransitionTime = -10f;
 
         private void OnEnable()
         {
@@ -71,6 +74,20 @@ namespace MiaShooter
             if (grenadeThrower == null)
             {
                 grenadeThrower = FindFirstObjectByType<GrenadeThrower>();
+            }
+
+            if (playerController == null)
+            {
+                playerController = FindFirstObjectByType<FirstPersonController>();
+            }
+            else
+            {
+                bool currentlyIndoors = playerController.transform.position.z < 20.5f;
+                if (currentlyIndoors != lastWasIndoors)
+                {
+                    lastWasIndoors = currentlyIndoors;
+                    lastZoneTransitionTime = Time.time;
+                }
             }
 
             if (mainCamera == null)
@@ -138,6 +155,9 @@ namespace MiaShooter
             // 5b. 3D Spatial Audio Probe Telemetry HUD
             DrawSpatialAudioProbeHUD(scale);
 
+            // 5c. Acoustic Zone Transition Toast Banner
+            DrawZoneTransitionToast(scale);
+
             // 6. Interactive Settings Modal (when open)
             if (GameSettings.IsSettingsOpen)
             {
@@ -149,16 +169,25 @@ namespace MiaShooter
 
         private void DrawTopStatusBar(float scale)
         {
-            // Left Holographic Badge
-            float leftW = 340f * scale;
+            // Left Holographic Badge & Acoustic Zone Indicator
+            float leftW = 380f * scale;
             float leftH = 64f * scale;
             Rect leftRect = new Rect(24f, 20f, leftW, leftH);
-            DrawTechCard(leftRect, new Color(0.02f, 0.04f, 0.07f, 0.78f), new Color(0.18f, 0.92f, 1f, 0.85f), scale);
+            DrawTechCard(leftRect, new Color(0.02f, 0.04f, 0.07f, 0.85f), new Color(0.18f, 0.92f, 1f, 0.85f), scale);
 
+            bool isIndoors = playerController != null ? playerController.transform.position.z < 20.5f : true;
+            string zoneSubtext = isIndoors
+                ? "🏢 TRONG NHÀ  •  VANG DỘI HANGAR 4.2S"
+                : "☀️ NGOÀI TRỜI  •  KHÔNG GIAN MỞ (DRY)";
+
+            Color zoneColor = isIndoors ? new Color(0.2f, 0.95f, 1f) : new Color(1f, 0.82f, 0.2f);
             GUI.Label(new Rect(leftRect.x + 16f * scale, leftRect.y + 8f * scale, leftW - 32f * scale, 24f * scale),
                 "✦ MIA // LABS TACTICAL SUITE", headerTitleStyle);
+
+            headerSubStyle.normal.textColor = zoneColor;
             GUI.Label(new Rect(leftRect.x + 16f * scale, leftRect.y + 32f * scale, leftW - 32f * scale, 22f * scale),
-                "FIRING RANGE SIMULATION  •  SYSTEM ACTIVE", headerSubStyle);
+                zoneSubtext, headerSubStyle);
+            headerSubStyle.normal.textColor = new Color(0.7f, 0.8f, 0.9f); // restore default
 
             // Right Tactical Score Card & Settings Button
             float rightW = 420f * scale;
@@ -177,7 +206,7 @@ namespace MiaShooter
             float targetColW = 120f * scale;
             GUI.Label(new Rect(rightRect.x + 160f * scale, rightRect.y + 8f * scale, targetColW, 20f * scale), "TARGETS", scoreLabelStyle);
             scoreValueStyle.normal.textColor = new Color(0.2f, 0.95f, 1f);
-            GUI.Label(new Rect(rightRect.x + 160f * scale, rightRect.y + 26f * scale, targetColW, 30f * scale), $"{targets:00} / 06", scoreValueStyle);
+            GUI.Label(new Rect(rightRect.x + 160f * scale, rightRect.y + 26f * scale, targetColW, 30f * scale), $"{targets:00} / 08", scoreValueStyle);
             scoreValueStyle.normal.textColor = new Color(1f, 0.82f, 0.18f); // restore gold
 
             // Settings Button
@@ -191,6 +220,38 @@ namespace MiaShooter
                 Cursor.lockState = GameSettings.IsSettingsOpen ? CursorLockMode.None : CursorLockMode.Locked;
                 Cursor.visible = GameSettings.IsSettingsOpen;
             }
+        }
+
+        private void DrawZoneTransitionToast(float scale)
+        {
+            float elapsed = Time.time - lastZoneTransitionTime;
+            if (elapsed < 0f || elapsed > 3.0f)
+            {
+                return;
+            }
+
+            float alpha = elapsed < 0.3f ? (elapsed / 0.3f) : (elapsed > 2.2f ? (1f - (elapsed - 2.2f) / 0.8f) : 1f);
+            float toastW = 520f * scale;
+            float toastH = 40f * scale;
+            float tx = (Screen.width - toastW) * 0.5f;
+            float ty = 96f * scale;
+
+            Color toastBg = lastWasIndoors
+                ? new Color(0.02f, 0.08f, 0.14f, 0.92f * alpha)
+                : new Color(0.12f, 0.08f, 0.02f, 0.92f * alpha);
+            Color toastBorder = lastWasIndoors
+                ? new Color(0.2f, 0.95f, 1f, 0.95f * alpha)
+                : new Color(1f, 0.75f, 0.15f, 0.95f * alpha);
+
+            DrawTechCard(new Rect(tx, ty, toastW, toastH), toastBg, toastBorder, scale);
+
+            string toastText = lastWasIndoors
+                ? "➔ ĐÃ VÀO KHU TRONG NHÀ: ÂM THANH VỌNG & VANG DỘI HANGAR 4.2S"
+                : "➔ ĐÃ RA KHU NGOÀI TRỜI: ÂM THANH MỞ RỘNG & KHÔ GỌN (DRY ACOUSTICS)";
+
+            headerTitleStyle.normal.textColor = new Color(toastBorder.r, toastBorder.g, toastBorder.b, alpha);
+            GUI.Label(new Rect(tx + 12f * scale, ty + 8f * scale, toastW - 24f * scale, 24f * scale), toastText, headerTitleStyle);
+            headerTitleStyle.normal.textColor = new Color(0.2f, 0.95f, 1f); // restore
         }
 
         private void DrawBottomLeftVitals(float scale)
