@@ -21,7 +21,8 @@ namespace MiaShooterEditor
             "Assets/Resources/Audio/land.mp3",
             "Assets/Audio/bomb-explosion.mp3",
             "Assets/Audio/smoke.mp3",
-            "Assets/Audio/ambience.wav"
+            "Assets/Audio/ambience.wav",
+            "Assets/Audio/laser.mp3"
         };
 
         [MenuItem("Tools/Mia Shooter/Build Sound & VFX Demo")]
@@ -39,6 +40,7 @@ namespace MiaShooterEditor
             AudioClip grenadeExplosion = LoadAudio("Assets/Audio/bomb-explosion.mp3");
             AudioClip smokeGrenade = LoadAudio("Assets/Audio/smoke.mp3");
             AudioClip ambience = LoadAudio("Assets/Audio/ambience.wav");
+            AudioClip laser = LoadAudio("Assets/Audio/laser.mp3");
 
             Material floorMaterial = CreateMaterial("Floor", new Color(0.055f, 0.075f, 0.095f), 0.55f, 0.72f);
             Material wallMaterial = CreateMaterial("Wall", new Color(0.095f, 0.12f, 0.15f), 0.35f, 0.55f);
@@ -58,7 +60,7 @@ namespace MiaShooterEditor
             BuildArena(floorMaterial, wallMaterial, darkMaterial, cyanGlow, orangeGlow);
             BuildLighting();
             BuildTargets(cyanMaterial, orangeMaterial, darkMaterial, hit: impact, explosion: explosion);
-            BuildPlayer(gunshot, impact, footstep, reload, land, grenadeExplosion, smokeGrenade, gunSteel, gunPanel, gunCeramic, cyanGlow, orangeGlow, darkMaterial);
+            BuildPlayer(gunshot, impact, footstep, reload, land, grenadeExplosion, smokeGrenade, laser, gunSteel, gunPanel, gunCeramic, cyanGlow, orangeGlow, darkMaterial);
             BuildGameSystems(ambience);
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -80,14 +82,33 @@ namespace MiaShooterEditor
                 throw new InvalidOperationException($"Demo scene is missing: {ScenePath}");
             }
 
-            EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            if (!EditorApplication.isPlaying)
+            {
+                EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            }
+
             ShootableTarget[] targets = UnityEngine.Object.FindObjectsByType<ShootableTarget>(FindObjectsSortMode.None);
             FirstPersonController player = UnityEngine.Object.FindFirstObjectByType<FirstPersonController>();
             WeaponController weapon = UnityEngine.Object.FindFirstObjectByType<WeaponController>();
             GrenadeThrower grenadeThrower = UnityEngine.Object.FindFirstObjectByType<GrenadeThrower>();
             DemoGameManager manager = UnityEngine.Object.FindFirstObjectByType<DemoGameManager>();
             AudioSource[] audioSources = UnityEngine.Object.FindObjectsByType<AudioSource>(FindObjectsSortMode.None);
-            GameObject blaster = GameObject.Find("Demo Blaster");
+            GameObject blaster = null;
+            if (player != null)
+            {
+                foreach (Transform t in player.GetComponentsInChildren<Transform>(true))
+                {
+                    if (t.name == "Demo Blaster")
+                    {
+                        blaster = t.gameObject;
+                        break;
+                    }
+                }
+            }
+            if (blaster == null)
+            {
+                blaster = GameObject.Find("Demo Blaster");
+            }
 
             if (targets.Length != 6)
             {
@@ -97,6 +118,11 @@ namespace MiaShooterEditor
             if (player == null || weapon == null || grenadeThrower == null || manager == null)
             {
                 throw new InvalidOperationException("The demo is missing a required gameplay component.");
+            }
+
+            if (weapon.LaserClip == null)
+            {
+                throw new InvalidOperationException("WeaponController is missing the laser audio clip.");
             }
 
             if (audioSources.Length < 3)
@@ -237,6 +263,7 @@ namespace MiaShooterEditor
             AudioClip land,
             AudioClip grenadeExplosion,
             AudioClip smokeGrenade,
+            AudioClip laser,
             Material gunSteel,
             Material gunPanel,
             Material gunCeramic,
@@ -382,7 +409,7 @@ namespace MiaShooterEditor
             FirstPersonController movement = player.AddComponent<FirstPersonController>();
             movement.Configure(camera, footstepAudio, land);
             WeaponController weapon = player.AddComponent<WeaponController>();
-            weapon.Configure(camera, gun.transform, muzzleObject.transform, magazine.transform, weaponAudio, gunshot, impact, reload, shake);
+            weapon.Configure(camera, gun.transform, muzzleObject.transform, magazine.transform, weaponAudio, gunshot, impact, reload, shake, laser);
             GrenadeThrower grenadeThrower = player.AddComponent<GrenadeThrower>();
             grenadeThrower.Configure(camera, shake, grenadeExplosion, smokeGrenade);
         }

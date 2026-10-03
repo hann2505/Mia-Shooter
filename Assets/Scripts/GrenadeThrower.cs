@@ -39,6 +39,19 @@ namespace MiaShooter
         private void Awake()
         {
             ResolveRuntimeReferences();
+            if (!IsGrenadeEquipped && weaponRoot != null)
+            {
+                SetWeaponVisible(true);
+            }
+        }
+
+        private void Start()
+        {
+            ResolveRuntimeReferences();
+            if (!IsGrenadeEquipped && weaponRoot != null)
+            {
+                SetWeaponVisible(true);
+            }
         }
 
         private void Update()
@@ -148,7 +161,27 @@ namespace MiaShooter
 
             if (weaponRoot == null && throwCamera != null)
             {
-                weaponRoot = throwCamera.transform.Find("Demo Blaster");
+                for (int i = 0; i < throwCamera.transform.childCount; i++)
+                {
+                    Transform child = throwCamera.transform.GetChild(i);
+                    if (child.name == "Demo Blaster")
+                    {
+                        weaponRoot = child;
+                        break;
+                    }
+                }
+            }
+
+            if (weaponRoot == null)
+            {
+                foreach (Transform t in GetComponentsInChildren<Transform>(true))
+                {
+                    if (t.name == "Demo Blaster")
+                    {
+                        weaponRoot = t;
+                        break;
+                    }
+                }
             }
 
             fragmentationClip ??= Resources.Load<AudioClip>("Audio/bomb-explosion");

@@ -13,6 +13,8 @@ namespace MiaShooter
         [SerializeField] private AudioClip gunshotClip;
         [SerializeField] private AudioClip emptyClip;
         [SerializeField] private AudioClip reloadClip;
+        [SerializeField] private AudioClip laserClip;
+        [SerializeField] private AudioSource laserAudio;
         [SerializeField] private CameraShake cameraShake;
         [SerializeField] private float fireInterval = 0.18f;
         [SerializeField] private float reloadDuration = 1.25f;
@@ -65,6 +67,8 @@ namespace MiaShooter
         public float LaserEnergy => laserEnergy;
         public bool IsLaserReady => laserUnlocked && laserEnergy > 0f;
         public bool IsFiringLaser => isFiringLaser;
+        public AudioClip LaserClip => laserClip;
+        public AudioSource LaserAudio => laserAudio;
 
         private void Awake()
         {
@@ -73,11 +77,19 @@ namespace MiaShooter
             currentAmmo = magazineSize;
             EnsureLaserVisuals();
             UpdateEnergyBar();
+            if (weaponRoot != null)
+            {
+                weaponRoot.gameObject.SetActive(true);
+            }
         }
 
         private void OnEnable()
         {
             DemoGameManager.TargetDestroyed += ChargeLaser;
+            if (weaponRoot != null && (grenadeThrower == null || !grenadeThrower.IsGrenadeEquipped))
+            {
+                weaponRoot.gameObject.SetActive(true);
+            }
         }
 
         private void OnDisable()
@@ -91,6 +103,7 @@ namespace MiaShooter
             ResolveRuntimeReferences();
             if (weaponRoot != null)
             {
+                weaponRoot.gameObject.SetActive(true);
                 weaponRestPosition = weaponRoot.localPosition;
                 weaponRestRotation = weaponRoot.localRotation;
             }
@@ -151,7 +164,8 @@ namespace MiaShooter
             AudioClip shot,
             AudioClip empty,
             AudioClip reload,
-            CameraShake shake)
+            CameraShake shake,
+            AudioClip laser = null)
         {
             aimCamera = camera;
             weaponRoot = root;
@@ -162,6 +176,10 @@ namespace MiaShooter
             emptyClip = empty;
             reloadClip = reload;
             cameraShake = shake;
+            if (laser != null)
+            {
+                laserClip = laser;
+            }
         }
 
         public bool TryFireLaser()
@@ -184,6 +202,18 @@ namespace MiaShooter
             if (laserAuraBeam != null)
             {
                 laserAuraBeam.enabled = true;
+            }
+
+            if (laserAudio != null && laserClip != null)
+            {
+                if (!laserAudio.isPlaying)
+                {
+                    laserAudio.clip = laserClip;
+                    laserAudio.loop = true;
+                    laserAudio.volume = 0.85f;
+                    laserAudio.Play();
+                }
+                laserAudio.pitch = 1.0f + 0.025f * Mathf.Sin(Time.time * 28f);
             }
 
             Ray ray = new Ray(aimCamera.transform.position, aimCamera.transform.forward);
@@ -348,6 +378,10 @@ namespace MiaShooter
         private void StopLaser()
         {
             isFiringLaser = false;
+            if (laserAudio != null && laserAudio.isPlaying)
+            {
+                laserAudio.Stop();
+            }
             if (laserBeam != null)
             {
                 laserBeam.enabled = false;
@@ -785,11 +819,36 @@ namespace MiaShooter
 
             if (weaponRoot == null && aimCamera != null)
             {
-                weaponRoot = aimCamera.transform.Find("Demo Blaster");
+                for (int i = 0; i < aimCamera.transform.childCount; i++)
+                {
+                    Transform child = aimCamera.transform.GetChild(i);
+                    if (child.name == "Demo Blaster")
+                    {
+                        weaponRoot = child;
+                        break;
+                    }
+                }
+            }
+
+            if (weaponRoot == null)
+            {
+                foreach (Transform t in GetComponentsInChildren<Transform>(true))
+                {
+                    if (t.name == "Demo Blaster")
+                    {
+                        weaponRoot = t;
+                        break;
+                    }
+                }
             }
 
             if (weaponRoot != null)
             {
+                if (grenadeThrower == null || !grenadeThrower.IsGrenadeEquipped)
+                {
+                    weaponRoot.gameObject.SetActive(true);
+                }
+
                 magazine ??= weaponRoot.Find("Magazine");
                 muzzle ??= weaponRoot.Find("Muzzle");
 
@@ -874,6 +933,24 @@ namespace MiaShooter
             }
 
             weaponAudio ??= GetComponent<AudioSource>();
+            if (laserAudio == null)
+            {
+                Transform audioChild = transform.Find("Laser Audio Source");
+                if (audioChild != null)
+                {
+                    laserAudio = audioChild.GetComponent<AudioSource>();
+                }
+                else
+                {
+                    GameObject audioObj = new GameObject("Laser Audio Source");
+                    audioObj.transform.SetParent(transform, false);
+                    laserAudio = audioObj.AddComponent<AudioSource>();
+                    laserAudio.playOnAwake = false;
+                    laserAudio.loop = true;
+                    laserAudio.spatialBlend = 0f;
+                    laserAudio.volume = 0.85f;
+                }
+            }
             cameraShake ??= aimCamera != null ? aimCamera.GetComponent<CameraShake>() : null;
         }
 
@@ -881,6 +958,7 @@ namespace MiaShooter
         {
             gunshotClip = Resources.Load<AudioClip>("Audio/gunshot") ?? gunshotClip;
             reloadClip = Resources.Load<AudioClip>("Audio/reload") ?? reloadClip;
+            laserClip = Resources.Load<AudioClip>("Audio/laser") ?? laserClip;
         }
 
         private void PlayOneShot(AudioClip clip, float volume)

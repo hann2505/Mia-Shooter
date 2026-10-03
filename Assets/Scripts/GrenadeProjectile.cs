@@ -6,9 +6,9 @@ namespace MiaShooter
     [RequireComponent(typeof(Rigidbody), typeof(Collider))]
     public sealed class GrenadeProjectile : MonoBehaviour
     {
-        [SerializeField] private float blastRadius = 7.5f;
-        [SerializeField] private float blastForce = 900f;
-        [SerializeField] private int damage = 2;
+        [SerializeField] private float blastRadius = 11.5f;
+        [SerializeField] private float blastForce = 1700f;
+        [SerializeField] private int damage = 3;
         [SerializeField] private float maximumLifetime = 6f;
 
         private AudioClip effectClip;
@@ -52,7 +52,7 @@ namespace MiaShooter
             VfxUtility.SpawnGrenadeExplosion(position);
             PlayExplosionAudio(position, 1f);
             ApplyBlastDamageAndForce(position);
-            ShakeCamera(position, blastRadius * 1.6f, 0.28f, 0.12f);
+            ShakeCamera(position, 32f, 0.58f, 0.55f);
             Destroy(gameObject);
         }
 
@@ -80,16 +80,29 @@ namespace MiaShooter
         {
             VfxUtility.SpawnSmokeCloud(position);
             PlayExplosionAudio(position, 0.45f);
-            ShakeCamera(position, 10f, 0.12f, 0.035f);
+            ShakeCamera(position, 12f, 0.16f, 0.25f);
             Destroy(gameObject);
         }
 
         private void ShakeCamera(Vector3 position, float maxDistance, float amplitude, float duration)
         {
-            if (cameraShake != null && Vector3.Distance(cameraShake.transform.position, position) <= maxDistance)
+            if (cameraShake == null)
             {
-                cameraShake.Play(amplitude, duration);
+                return;
             }
+
+            float distance = Vector3.Distance(cameraShake.transform.position, position);
+            if (distance > maxDistance)
+            {
+                return;
+            }
+
+            float normalizedDist = Mathf.Clamp01(distance / maxDistance);
+            float strengthMultiplier = Mathf.Pow(1f - normalizedDist, 1.25f);
+            float actualDuration = Mathf.Max(duration * strengthMultiplier, 0.22f);
+            float actualStrength = amplitude * strengthMultiplier;
+
+            cameraShake.Play(actualDuration, actualStrength);
         }
 
         private void PlayExplosionAudio(Vector3 position, float volume)
@@ -107,8 +120,8 @@ namespace MiaShooter
             source.volume = volume;
             source.spatialBlend = 1f;
             source.rolloffMode = AudioRolloffMode.Logarithmic;
-            source.minDistance = 2f;
-            source.maxDistance = 40f;
+            source.minDistance = 4f;
+            source.maxDistance = 65f;
             source.Play();
 
             Destroy(audioObject, effectClip.length + 0.1f);

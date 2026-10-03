@@ -17,13 +17,14 @@ Nếu cần tạo lại scene, chọn menu `Tools > Mia Shooter > Build Sound & 
 
 ### Hiệu ứng âm thanh
 
-Bốn âm thanh gameplay `gunshot`, `reload`, `footstep` và `land` được nạp trực tiếp từ `Assets/Resources/Audio` khi vào Play Mode. Vì vậy Unity luôn dùng bản MP3 hiện tại ngay cả khi Editor vừa khôi phục một scene backup cũ; tham chiếu trong scene chỉ đóng vai trò dự phòng.
+Bốn âm thanh gameplay cơ bản `gunshot`, `reload`, `footstep` và `land` cùng âm thanh khai hỏa chùm năng lượng `laser` được nạp trực tiếp từ `Assets/Resources/Audio` khi vào Play Mode. Vì vậy Unity luôn dùng bản MP3 hiện tại ngay cả khi Editor vừa khôi phục một scene backup cũ; tham chiếu trong scene chỉ đóng vai trò dự phòng.
 
 - Tiếng súng được phát từ vị trí người chơi với `AudioSource` có `Spatial Blend`.
+- Âm thanh bắn laser sử dụng file `Assets/Audio/laser.mp3` (`Assets/Resources/Audio/laser.mp3`): tích hợp qua `AudioSource` 2D chuyên dụng chạy lặp (`loop = true`) liên tục trong suốt thời gian giữ chuột phải, tự động biến điệu cao độ (dynamic pitch modulation) dao động nhẹ theo luồng plasma và dừng ngay lập tức khi nhả chuột hoặc cạn kiệt pin năng lượng.
 - Tiếng va chạm và tiếng nổ được phát tại đúng vị trí bia trong không gian 3D.
 - Tiếng bước chân thay đổi nhẹ cao độ để tránh cảm giác lặp máy móc.
 - Tiếng nạp đạn kết hợp âm cơ khí và hai nhịp khóa hộp tiếp đạn.
-- Tiếng súng, nạp đạn và bước chân sử dụng asset MP3; hiệu ứng tiếp đất MP3 chỉ phát sau khi người chơi thực sự rơi đủ nhanh.
+- Tiếng súng, nạp đạn, bước chân và laser sử dụng asset MP3; hiệu ứng tiếp đất MP3 chỉ phát sau khi người chơi thực sự rơi đủ nhanh.
 - Âm thanh môi trường chạy lặp để tạo không khí cho phòng tập.
 - Khoảng cách nghe sử dụng `minDistance`, `maxDistance` và logarithmic rolloff.
 
@@ -50,8 +51,38 @@ Bốn âm thanh gameplay `gunshot`, `reload`, `footstep` và `land` được n�
 - Va chạm tạo chùm tia lửa particle tại bề mặt trúng đạn.
 - Bia nổ bằng hai lớp particle, ánh sáng và các mảnh vỡ có Rigidbody.
 - Nhấn `G` hoặc `H` sẽ cất súng và đưa loại bom tương ứng vào tay. Click chuột trái mới chạy animation ném; projectile được thả đúng giữa chuyển động rồi tay thu khỏi khung hình và súng xuất hiện lại.
-- Lựu đạn nổ có vụ nổ lớn, lõi lửa, tia lửa, khói, ánh sáng, âm thanh 3D, lực đẩy, sát thương bán kính và vòng sóng xung kích lan trên mặt đất.
-- Bom khói có vỏ xanh lam, nổ nhẹ khi chạm bề mặt rồi tạo đám khói dày tồn tại nhiều giây và không gây sát thương.
+- **Mô hình cánh tay góc nhìn thứ nhất & Găng tay chiến thuật thủ tục (Procedural Tactical Arm & Combat Glove Viewmodel)**:
+  - **Cánh tay liên tục tự nhiên (2-Bone Analytical IK)**: Cánh tay xuất phát từ góc dưới bên trái ngoài màn hình (`ShoulderLocalPos = (-0.32, -0.38, 0.10)`), loại bỏ hoàn toàn hiện tượng tay lơ lửng đứt đoạn; cánh tay trên (bắp tay) bọc ống tay áo tác chiến với đai bắp tay kim loại, khớp cùi chỏ có giáp bảo vệ góc cạnh.
+  - **Giáp cẳng tay công nghệ cao (Forearm Exo-Gauntlet)**: Ống cẳng tay trang bị giáp bảo vệ vát cạnh carbon, tích hợp thanh dẫn năng lượng sinh trắc học phát sáng cyan (`Biometric Power Rail`), đèn báo trạng thái viễn trắc màu hổ phách (`Status Node`) và đinh ốc kim loại.
+  - **Găng tay chiến thuật đa lớp (Combat Glove)**: Cổ tay có khóa kẹp cơ khí; lòng bàn tay công thái học có đệm cao su vân nhám tăng độ bám; mu bàn tay bọc giáp carbon với đường viền mạch năng lượng cyan và 4 chấu giáp bảo vệ khớp ngón tay (knuckle studs).
+  - **Hệ thống 5 ngón tay chuyển động độc lập (5 Articulated Digits)**: Ngón cái và 4 ngón tay (trỏ, giữa, áp út, út) đều có 2 khớp xoay (`rootPivot` và `distalPivot`), đệm bọc khớp carbon và miếng đệm ma sát đầu ngón tay. Các góc xoay được hiệu chỉnh chính xác để ôm chặt lựu đạn khi cầm và bung xòe tự nhiên khi ném.
+  - **Kích thước lựu đạn chuẩn cầm tay (Tactical Grenade Model)**: Thu nhỏ kích thước quả bom về chuẩn thực tế ~10cm x 12.5cm nằm gọn trong lòng bàn tay, bổ sung chi tiết đai gân xích đạo, cổ ngòi nổ kim loại, nắp kíp nổ, đòn bẩy an toàn (thìa giữ - safety spoon) ôm sát thân dưới các ngón tay, chốt vòng giật bằng đồng thau và đèn LED chỉ báo tác chiến (đỏ cam cho bom nổ, xanh ngọc cho bom khói).
+- **Hoạt ảnh ném bom cơ học linh hoạt (Dynamic Grenade Throw Animation)**:
+  - *Nhịp thở tự nhiên khi ngắm (Organic Breathing Sway)*: Cánh tay dao động vi mô hình sin nhịp nhàng khi ở trạng thái sẵn sàng ném (`HoldPose`), tạo cảm giác nhân vật còn sống động và có trọng lượng.
+  - *Đưa bom vào tay (Equip)*: Cánh tay vung từ dưới lên theo đường cong đàn hồi (`EaseOutBack`), các ngón tay siết chặt dần quanh quả lựu đạn.
+  - *Lấy đà (Windup)*: Kéo tay về sau, cổ tay ngửa lên và gập chặt các ngón tay chuẩn bị phát lực.
+  - *Vung tay & Bung ngón (Heave & Dynamic Finger Release)*: Cánh tay vung tới tột đỉnh với gia tốc mạnh mẽ; ngay tại điểm nhả lựu đạn (`releasePoint = 0.54`), các ngón tay lập tức bung xòe mạnh mẽ giải phóng quả bom xoay về phía trước, kèm chấn động rung camera nhẹ (`CameraShake`).
+  - *Hãm đà quán tính & Thu tay (Follow-Through & Recovery)*: Cánh tay tiếp tục vung chúc xuống triệt tiêu quán tính, các ngón tay thả lỏng dần về độ cong thư giãn tự nhiên rồi hạ cánh tay mượt mà khỏi màn hình và hoàn trả vũ khí.
+- **Vụ nổ lựu đạn siêu uy lực (Cinematic Heavy Bomb Explosion VFX)**:
+  - **Chớp sáng chói lòa & Ánh sáng động**: Chớp sáng tâm trắng tức thời kết hợp nguồn sáng điểm động cường lực (cường độ 55, bán kính 36m) bừng sáng toàn bộ đấu trường trong tích tắc rồi chuyển thành ánh lửa ấm áp.
+  - **Cầu lửa bùng phát dữ dội & Cột lửa hình nấm**: Cầu lửa trung tâm nở rộng 7–8.5m với dải màu gradient từ vàng kim rực lửa sang cam đỏ cuồn cuộn; kèm cột lửa bốc đứng hình phễu/nón phụt thẳng lên cao.
+  - **Cột khói đen thể tích cuồn cuộn (Volumetric Smoke Plume)**: 180 hạt khói hữu cơ Perlin đa tầng nở rộng đến 10–12m với dải màu bồ hóng sẫm chuyển tro xám, bốc cao cuồn cuộn theo dòng đối lưu nhiệt cùng vành khói quét sát mặt sàn (80 hạt).
+  - **Hệ thống siêu sóng xung kích đa tầng (Multi-Tier Shockwaves)**:
+    - *Vòng plasma lửa sơ cấp*: Độ dày 1.1m, bung tỏa bùng nổ theo đường cong ease-out đạt bán kính 17.5m.
+    - *Vòng nén khí siêu thanh (Supersonic Compression Wave)*: Sóng khí xanh lam nhạt sắc bén quét nhanh tới 23m.
+    - *Vòm sóng xung kích 3D đứng*: Vòng sóng nghiêng 3D bán kính 15m tạo cảm giác khối cầu áp suất trong không gian.
+    - *Sóng bụi quét sàn (Ground Dust Wave)*: 180 hạt bụi đất quét sát bề mặt sàn với tốc độ 20–28m/s mô phỏng luồng gió nén cực mạnh.
+  - **Mưa tia lửa kim loại nóng chảy & Mảnh vỡ vật lý**: 180 tia lửa văng hình parabol theo trọng lực cùng 16 khối mảnh vỡ vật lý nảy tung toé trên sàn đấu trường.
+  - **Vết cháy hố nổ mặt sàn (Ground Scorch Crater)**: Để lại vết cháy xém đường kính 7m với viền nhiễu hữu cơ, duy trì và mờ dần trong 8 giây.
+  - **Uy lực vật lý & Rung chấn màn hình**: Bán kính sát thương tăng lên 11.5m, lực hất văng tăng lên 1700f, sát thương 3; camera rung chấn dữ dội theo khoảng cách từ tâm nổ trong phạm vi 32m.
+- **Hệ thống khói chiến thuật chân thực (Volumetric Tactical Smoke VFX)**:
+  - **Texture khói hữu cơ vi mô (Procedural Organic fBm Perlin)**: Tạo vân khói 128x128 tính toán bằng 3 tầng Perlin fBm kết hợp hàm suy giảm cosin bán kính và khử cạnh quad hoàn toàn, tích hợp shading vi mô đa diện tạo các rãnh khối 3D cho từng cụm khói.
+  - **Vật liệu Alpha-Blended chuẩn màu**: Cân bằng Tint Color triệt tiêu hiện tượng nhân đôi độ sáng của Unity Legacy Particle Shader, ngăn chặn cháy trắng và bảo toàn màu xám bạc chiến thuật.
+  - **Màn khói 4 tầng chuyên sâu (4-Tier Tactical Smoke Screen)**:
+    - *Chớp lửa ngòi nổ*: Ánh sáng điểm cam ấm chớp nhẹ trong 0.15s mô phỏng phản ứng pyrotechnic ban đầu.
+    - *Khối khói cuộn thể tích trung tâm (Dense Core)*: 105 hạt khói phân tầng sáng tối tự nhiên (`MinMaxGradient`), bung nở từ 1.5m lên 4.5m tạo màn chắn tầm nhìn đục mờ, cuộn xoay và trôi nhẹ theo dòng đối lưu.
+    - *Thảm sương khói bò sát mặt sàn (Ground Creeping Carpet)*: 55 hạt khói quét sát mặt sàn mô phỏng tính chất khí nặng đặc trưng của lựu đạn khói quân sự.
+    - *Dải khói khuếch tán không khí (Atmospheric Wisps)*: 30 dải khói mỏng nhẹ trôi lơ lửng xung quanh, hòa quyện vào môi trường và tan biến nhẹ nhàng sau 7–9 giây.
 - Lựu đạn nổ sử dụng `bomb-explosion.mp3`; bom khói sử dụng `smoke.mp3`. Cả hai âm thanh được phát 3D tại đúng vị trí va chạm.
 - Camera rung nhẹ khi bắn.
 - Súng giật theo mỗi phát bắn; nhấn `R` luôn chạy nạp chiến thuật, kể cả khi băng còn đầy. Súng hạ xuống, hộp tiếp đạn tháo–lắp và phát ra một pulse năng lượng.

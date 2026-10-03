@@ -7,23 +7,43 @@ namespace MiaShooter
         public static GameObject Create(string name, GrenadeType grenadeType)
         {
             bool isSmoke = grenadeType == GrenadeType.Smoke;
-            Color bodyColor = isSmoke ? new Color(0.1f, 0.15f, 0.2f) : new Color(0.12f, 0.18f, 0.13f);
-            Color indicatorColor = isSmoke ? new Color(0.18f, 0.75f, 1f) : new Color(1f, 0.22f, 0.04f);
+            Color bodyColor = isSmoke ? new Color(0.12f, 0.16f, 0.22f) : new Color(0.12f, 0.18f, 0.13f);
+            Color indicatorColor = isSmoke ? new Color(0.18f, 0.85f, 1f) : new Color(1f, 0.32f, 0.06f);
 
             GameObject grenade = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             grenade.name = name;
-            grenade.transform.localScale = new Vector3(0.28f, 0.36f, 0.28f);
-            grenade.GetComponent<Renderer>().material = CreateMaterial(bodyColor, 0.78f, 0.45f);
+            grenade.transform.localScale = new Vector3(0.095f, 0.125f, 0.095f);
+            grenade.GetComponent<Renderer>().material = CreateMaterial(bodyColor, 0.78f, 0.52f);
 
+            // Textured tactical equator band around the waist
             CreateDetail(PrimitiveType.Cylinder, "Grenade Band", grenade.transform,
-                Vector3.zero, new Vector3(0.54f, 0.06f, 0.54f),
-                CreateMaterial(new Color(0.035f, 0.045f, 0.05f), 0.9f, 0.65f));
-            CreateDetail(PrimitiveType.Cube, "Grenade Fuse", grenade.transform,
-                new Vector3(0f, 0.56f, 0f), new Vector3(0.28f, 0.18f, 0.24f),
-                CreateMaterial(new Color(0.22f, 0.25f, 0.24f), 0.85f, 0.7f));
+                Vector3.zero, new Vector3(1.025f, 0.065f, 1.025f),
+                CreateMaterial(new Color(0.04f, 0.05f, 0.06f), 0.9f, 0.65f));
+
+            // Upper fuse collar
+            CreateDetail(PrimitiveType.Cylinder, "Grenade Fuse Collar", grenade.transform,
+                new Vector3(0f, 0.46f, 0f), new Vector3(0.38f, 0.10f, 0.38f),
+                CreateMaterial(new Color(0.22f, 0.25f, 0.26f), 0.85f, 0.70f));
+
+            // Fuse mechanism head
+            CreateDetail(PrimitiveType.Cube, "Grenade Fuse Head", grenade.transform,
+                new Vector3(0f, 0.56f, 0f), new Vector3(0.30f, 0.16f, 0.28f),
+                CreateMaterial(new Color(0.28f, 0.30f, 0.32f), 0.88f, 0.75f));
+
+            // Safety lever (spoon) hugging the body
+            CreateDetail(PrimitiveType.Cube, "Grenade Safety Spoon", grenade.transform,
+                new Vector3(0.46f, 0.20f, 0f), new Vector3(0.08f, 0.52f, 0.20f),
+                CreateMaterial(new Color(0.20f, 0.22f, 0.24f), 0.82f, 0.68f));
+
+            // Safety pull ring
+            CreateDetail(PrimitiveType.Cylinder, "Grenade Pull Ring", grenade.transform,
+                new Vector3(0.22f, 0.56f, 0.18f), new Vector3(0.22f, 0.035f, 0.22f),
+                CreateMaterial(new Color(0.85f, 0.74f, 0.25f), 0.95f, 0.85f));
+
+            // Tactical LED indicator
             CreateDetail(PrimitiveType.Sphere, "Grenade Indicator", grenade.transform,
-                new Vector3(0f, 0.35f, -0.48f), Vector3.one * 0.12f,
-                CreateEmissiveMaterial(indicatorColor, 3f));
+                new Vector3(0f, 0.28f, -0.46f), Vector3.one * 0.18f,
+                CreateEmissiveMaterial(indicatorColor, 3.5f));
             return grenade;
         }
 
@@ -53,7 +73,14 @@ namespace MiaShooter
             }
 
             collider.enabled = false;
-            Object.Destroy(collider);
+            if (Application.isPlaying)
+            {
+                Object.Destroy(collider);
+            }
+            else
+            {
+                Object.DestroyImmediate(collider);
+            }
         }
 
         private static void CreateDetail(

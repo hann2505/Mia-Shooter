@@ -110,6 +110,23 @@ namespace MiaShooterEditor
 
             Debug.Log($"[AURA VERIFICATION] Core Beam width: {coreBeam.startWidth}, Aura Beam width: {auraBeam.startWidth}, Muzzle Aura Light Intensity: {muzzleLight.intensity}");
 
+            if (weapon.LaserClip == null)
+            {
+                Debug.LogError("LaserClip is null on WeaponController!");
+                return;
+            }
+            if (weapon.LaserAudio == null)
+            {
+                Debug.LogError("LaserAudio is null on WeaponController!");
+                return;
+            }
+            if (weapon.LaserAudio.clip != weapon.LaserClip)
+            {
+                Debug.LogError($"LaserAudio clip mismatch! Expected {weapon.LaserClip.name}, got {weapon.LaserAudio.clip?.name}");
+                return;
+            }
+            Debug.Log($"[LASER AUDIO VERIFIED] Laser clip: {weapon.LaserClip.name}, isPlaying: {weapon.LaserAudio.isPlaying}, loop: {weapon.LaserAudio.loop}");
+
             cam.Render();
             RenderTexture.active = rt;
             screenShot.ReadPixels(new Rect(0, 0, 1280, 720), 0, 0);
